@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import { connectDB } from "./config/db.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import userRouter from "./routes/userRoutes.js";
 dotenv.config();
 
 const app = express();
@@ -16,12 +17,9 @@ const corOptions = {
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
 };
 app.use(cors(corOptions));
-// app.use("/api/v1");
-const PORT = process.env.PORT || 5000;
 
-app.get('/', (req, res) => {
-  res.send('Hello from ES6 modules!');
-});
+app.use("/api/v1", userRouter);
+const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
