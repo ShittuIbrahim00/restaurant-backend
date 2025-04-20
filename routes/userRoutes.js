@@ -5,8 +5,8 @@ import { registerUser, loginUser, adminCreateUser, staffCreateUser, getUsers, ge
 
 import { authorizeRoles, protect } from "../middlewares/authMiddleware.js";
 
-userRouter.post("/register", registerUser);       // For self-registering admin/customer
-userRouter.post("/login", loginUser);             // Login
+userRouter.post("/register", registerUser);     
+userRouter.post("/login", loginUser);           
 
 // Admin creates any user
 // Save token to localStorage in the front-end
@@ -16,16 +16,16 @@ userRouter.post( "/admin/create-user", protect, authorizeRoles("admin"), adminCr
 // Save token to localStorage in the front-end
 userRouter.post( "/staff/create-user", protect, authorizeRoles("branch-manager"), staffCreateUser );
 
-// Get all users (admin only)
+// (admin only)
 userRouter.get("/restaurant-users", protect, authorizeRoles("admin"), getUsers);
 
-// Get single user (admin or self)
-userRouter.get("/restaurant-users/:id", protect, getUserById);
+// (admin or self)
+userRouter.get("/restaurant-user", protect, getUserById);
 
-// Update user (admin or self)
-userRouter.put("/restaurant-users/:id", protect, updateUser);
+// (admin or self)
+userRouter.put("/update-restaurant-user", protect, updateUser);
 
-// Delete user (admin only)
-userRouter.delete("/restaurant-users/:id", protect, authorizeRoles("admin"), deleteUser);
+// (admin only)
+userRouter.delete("/delete-restaurant-user", protect, authorizeRoles("admin"), deleteUser);
 
 export default userRouter;
