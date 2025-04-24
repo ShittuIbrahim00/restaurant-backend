@@ -17,7 +17,7 @@ userRouter.post( "/admin/create-user", protect, authorizeRoles("admin"), adminCr
 userRouter.post( "/staff/create-user", protect, authorizeRoles("branch-manager", "restaurant-owner"), staffCreateUser );
 
 // (admin only)
-userRouter.get("/restaurant-users", protect, authorizeRoles("admin", "restaurant-owner"), getUsers);
+userRouter.get("/restaurant-users", protect, authorizeRoles("admin", "restaurant-owner", "branch-manager"), getUsers);
 
 // (admin or self)
 userRouter.get("/restaurant-user", protect, getUserById);
