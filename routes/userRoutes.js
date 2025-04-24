@@ -14,10 +14,10 @@ userRouter.post( "/admin/create-user", protect, authorizeRoles("admin"), adminCr
 
 // Branch manager (staffs) creates specific roles
 // Save token to localStorage in the front-end
-userRouter.post( "/staff/create-user", protect, authorizeRoles("branch-manager"), staffCreateUser );
+userRouter.post( "/staff/create-user", protect, authorizeRoles("branch-manager", "restaurant-owner"), staffCreateUser );
 
 // (admin only)
-userRouter.get("/restaurant-users", protect, authorizeRoles("admin"), getUsers);
+userRouter.get("/restaurant-users", protect, authorizeRoles("admin", "restaurant-owner"), getUsers);
 
 // (admin or self)
 userRouter.get("/restaurant-user", protect, getUserById);
@@ -26,6 +26,6 @@ userRouter.get("/restaurant-user", protect, getUserById);
 userRouter.put("/update-restaurant-user", protect, updateUser);
 
 // (admin only)
-userRouter.delete("/delete-restaurant-user", protect, authorizeRoles("admin"), deleteUser);
+userRouter.delete("/delete-restaurant-user", protect, authorizeRoles("admin", "restaurant-owner"), deleteUser);
 
 export default userRouter;
