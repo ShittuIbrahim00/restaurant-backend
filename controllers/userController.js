@@ -114,37 +114,6 @@ export const getUsers = async (req, res) => {
   }
 };
 
-export const getUserById = async (req, res) => {
-    const {userId} = req.query;
-  try {
-    const targetUser = await UserSchema.findById(userId).select("-password");
-
-    if (!targetUser) return res.status(404).json({ message: "User not found" });
-
-    // Admin can access any
-    if (req.user.role === "admin") {
-      return res.status(200).json(targetUser);
-    }
-    if(!["admin", "restaurant-owner"].includes(role)){
-      return res.status(200).json(targetUser);
-    }
-
-    // Customer can access themselves only
-    if ( req.user.role === "customer" && req.user._id.toString() === userId) {
-      return res.status(200).json(targetUser);
-    }
-
-    // Staffs can view themselves only
-    if ( req.user.role === "waiter" && req.user._id.toString() === userId) {
-      return res.status(200).json(targetUser);
-    }
-
-    return res.status(403).json({ message: "Access denied" });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
 export const updateUser = async (req, res) => {
     const {userId} = req.query;
   try {
