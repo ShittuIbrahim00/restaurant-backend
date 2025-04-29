@@ -45,7 +45,7 @@ export const deleteTableCategory = async (req, res) => {
     const id = req.params.id;
     const category = await TableCat.findById(id);
     if (!category) {
-      return res.status(404).json({ success: false, msg: 'Table Category Id Was Not Found Or Table Category Does Not Exist' });
+      return res.status(404).json({ success: false, msg: 'Table Category Id Was Not Found Or Table Category Does Not Exist', data: category });
     }
     await Table.deleteMany({ category: id });
 
@@ -57,4 +57,15 @@ export const deleteTableCategory = async (req, res) => {
     res.status(500).json({ msg: "An Error Occurred While Deleting Table Category" });
   }
 };
+
+
+export const getAllTableCategory = async(req, res)=>{
+  try {
+    const resp = await TableCat.find();
+    res.status(200).json({status: true, msg: 'Successfully retrieved the data', data: resp})
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({ msg: "An Error Occurred While Fetching Table Category" });
+  }
+}
 
