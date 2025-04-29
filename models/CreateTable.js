@@ -3,11 +3,6 @@ import mongoose from "mongoose";
 const schema = mongoose.Schema;
 
 const createTable = new schema({
-  restaurantId: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: true,
-    ref: "Restaurant",
-  },
   table_category: {required: true, type: String, ref: 'Table-Category'},
   table_number: { required: true, type: String },
   capacity: { required: true, type: Number },

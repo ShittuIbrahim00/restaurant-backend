@@ -5,7 +5,8 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import userRouter from "./routes/userRoutes.js";
 import tableRouter from './routes/tableRoute.js'
-import reserveRouter from "./routes/reservetableRoute.js";
+import reserveRouter from "./routes/reservetableRoute.js"
+import categoryRoute from './routes/TableCategoryRoute.js'
 dotenv.config();
 
 const app = express();
@@ -23,6 +24,7 @@ app.use(cors(corOptions));
 app.use("/api/v1", userRouter);
 app.use('/api/v1', tableRouter)
 app.use("/api/v1", reserveRouter)
+app.use("/api/v1", categoryRoute)
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {

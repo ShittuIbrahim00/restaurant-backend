@@ -1,10 +1,10 @@
 import mongoose from "mongoose";
 
 
-const Table_category = new mongoose.Schema({
-    name: {required: true, enum: ['Regular', 'Executive'], default: 'Regular'}
+const TableCategory = new mongoose.Schema({
+    name: { type: String, required: true, enum: ['Regular', 'Executive']},
 })
 
-const TableCat = mongoose.model('Table-Category', Table_category)
+const TableCat = mongoose.model('Table-Category', TableCategory)
 
 export default TableCat;

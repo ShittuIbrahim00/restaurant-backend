@@ -2,7 +2,7 @@ import User from "../models/userModel.js";
 import TableReserve from "../models/TableReserve.js";
 export const createReserveTable = async (req, res) => {
   try {
-    const userId = req.params.userId;
+    const userId = req.params.id;
     const {
       reservtion_Date,
       reservation_Time,
@@ -24,7 +24,7 @@ export const createReserveTable = async (req, res) => {
     const resp = await Reserve.save();
     res
       .status(200)
-      .json({ sucess: true, msg: "Table Reserved Successfully", data: resp });
+      .json({sucess: true, msg: "Table Reserved Successfully", data: resp });
   } catch (error) {
     console.log(error.message);
     res.status(500).json({ msg: "An Error Ocured While Reserving Table" });
@@ -36,7 +36,7 @@ export const createReserveTable = async (req, res) => {
 
 export const updateReserveTable = async (req, res) => {
   try {
-    const userId = req.params.userId;
+    const userId = req.params.id;
     const user = await User.findById(userId);
     if (!user)
       res.status(404).json({
@@ -86,7 +86,7 @@ export const getAllReserveTable = async (req, res) => {
 
 export const deleteReserveTable = async (req, res) => {
   try {
-    const tableId = req.params.tableId;
+    const tableId = req.params.id;
     const find = TableReserve.findById(tableId);
     if (!find)
       res.status(404).json({
