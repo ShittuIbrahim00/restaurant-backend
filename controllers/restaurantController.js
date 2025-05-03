@@ -4,23 +4,20 @@ import UserSchema from "../models/userModel.js";
 // Create Restaurant - Only admin can do this
 export const createRestaurant = async (req, res) => {
   try {
-    const user = req.user;
-
-    if (user.role !== "admin") {
-      return res.status(403).json({ message: "Only admins can create restaurants" });
-    }
-
-    const { name, ownerId, description } = req.body;
+    const { name, owner, description } = req.body;
 
     // Validate owner
-    const owner = await UserSchema.findById(ownerId);
-    if (!owner || owner.role !== "restaurant-owner") {
+    const validatedOwner = await UserSchema.findById(owner);
+    if (!validatedOwner || validatedOwner.role !== "restaurant-owner") {
       return res.status(400).json({ message: "Invalid restaurant owner" });
-    }
+    };
+
+    const checkName = await RestaurantSchema.findOne({name});
+    if(checkName) return res.status(400).json({ message: "Name already exist" });
 
     const restaurant = await RestaurantSchema.create({
       name,
-      owner: ownerId,
+      owner: owner,
       description,
     });
 
@@ -59,15 +56,37 @@ export const getAllRestaurants = async (req, res) => {
     }
   };
 
+  // Update Restaurant - Admin only
+export const updateRestaurant = async (req, res) => {
+    try {
+      const user = req.user;
+  
+      if (user.role !== "admin") {
+        return res.status(403).json({ message: "Only admins can update restaurants" });
+      }
+  
+      const { id } = req.params;
+      const updates = req.body;
+  
+      const restaurant = await Restaurant.findByIdAndUpdate(id, updates, {
+        new: true,
+        runValidators: true,
+      });
+  
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+  
+      res.status(200).json({ message: "Restaurant updated", restaurant });
+    } catch (err) {
+      res.status(500).json({ message: "Server error", error: err.message });
+    }
+  };
+  
+
 // Delete Restaurant (and its Locations) - Only admin
 export const deleteRestaurant = async (req, res) => {
   try {
-    const user = req.user;
-
-    if (user.role !== "admin") {
-      return res.status(403).json({ message: "Only admins can delete restaurants" });
-    }
-
     const { id } = req.query;
 
     const restaurant = await RestaurantSchema.findOneAndDelete({ _id: id });

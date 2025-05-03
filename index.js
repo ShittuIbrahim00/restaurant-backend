@@ -18,6 +18,7 @@ app.use(cookieParser());
 
 const allowedOrigins = process.env.CLIENT_URLS?.split(",") || [
   "http://localhost:5173",
+  "http://localhost:5175",
   "https://restaurant-dashboard-three.vercel.app",
   "https://restaurant-project-ivory.vercel.app"
 ];
