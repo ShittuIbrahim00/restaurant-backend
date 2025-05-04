@@ -4,6 +4,9 @@ import { connectDB } from "./config/db.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import userRouter from "./routes/userRoutes.js";
+import categoryRouter from "./routes/categoryRoutes.js";
+import menuRouter from "./routes/menuRoutes.js";
+import orderRouter from "./routes/orderRoutes.js";
 dotenv.config();
 
 const app = express();
@@ -19,6 +22,9 @@ const corOptions = {
 app.use(cors(corOptions));
 
 app.use("/api/v1", userRouter);
+app.use("/api/v1", categoryRouter);
+app.use("/api/v1", menuRouter);
+app.use("/api/v1", orderRouter);
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
