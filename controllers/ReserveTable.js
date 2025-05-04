@@ -1,38 +1,55 @@
 import User from "../models/userModel.js";
 import TableReserve from "../models/TableReserve.js";
+import createTableSchema from "../models/CreateTable.js";
 export const createReserveTable = async (req, res) => {
   try {
-    const userId = req.params.id;
-    const {
-      reservtion_Date,
-      reservation_Time,
-      qty_persons,
-    } = req.body;
-    const user = await User.findById(userId);
-    if (!user)
-      res.status(404).json({
-        success: false,
-        msg: "User id not found or user does not exist",
-      });
+    const { tableId } = req.params;
+    const { userId, reservation_Date, reservation_Time, qty_persons } =
+      req.body;
 
-    const tableRe = {
-      reservtion_Date,
+    // Check if table exists
+    const table = await createTableSchema.findById(tableId);
+    if (!table) {
+      return res.status(404).json({ success: false, msg: "Table not found" });
+    }
+
+    // Check if user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, msg: "User not found" });
+    }
+
+    if (qty_persons > table.capacity) {
+      return res
+        .status(400)
+        .json({
+          success: false,
+          msg: `This table can only accomodate ${table.capacity} peoples`,
+        });
+    }
+    // Create reservation
+    const reservation = new TableReserve({
+      reservation_Date,
       reservation_Time,
       qty_persons,
-    };
-    const Reserve = new TableReserve(tableRe);
-    const resp = await Reserve.save();
-    res
-      .status(200)
-      .json({sucess: true, msg: "Table Reserved Successfully", data: resp });
+      user: userId,
+      table: tableId,
+    });
+
+    const saved = await reservation.save();
+
+    res.status(201).json({
+      success: true,
+      msg: "Table reserved successfully",
+      data: saved,
+    });
   } catch (error) {
-    console.log(error.message);
-    res.status(500).json({ msg: "An Error Ocured While Reserving Table" });
+    console.error(error.message);
+    res
+      .status(500)
+      .json({ msg: "An error occurred while reserving the table" });
   }
 };
-
-
-
 
 export const updateReserveTable = async (req, res) => {
   try {
@@ -59,9 +76,6 @@ export const updateReserveTable = async (req, res) => {
   }
 };
 
-
-
-
 export const getAllReserveTable = async (req, res) => {
   try {
     const resp = await TableReserve.find().populate("table").populate("user", {
@@ -80,9 +94,6 @@ export const getAllReserveTable = async (req, res) => {
       .json({ msg: "An Error Ocured While Retrieving Reserve Table" });
   }
 };
-
-
-
 
 export const deleteReserveTable = async (req, res) => {
   try {

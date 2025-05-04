@@ -156,7 +156,7 @@ export const updateUser = async (req, res) => {
     }
 
     // Customer can update self only
-    if ( req.user.role === "customer" && userId.toString() === userId) {
+    if (req.user.role === "customer" && userId.toString() === userId) {
       userToUpdate.name = name || userToUpdate.name;
       userToUpdate.email = email || userToUpdate.email;
       if (password) {

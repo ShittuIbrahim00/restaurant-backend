@@ -2,32 +2,37 @@ import createTableSchema from "../models/CreateTable.js";
 import TableCat from "../models/TableCategory.js";
 export const createTable = async (req, res) => {
   try {
-    const id = req.body
-    const { table_number, capacity, price, restaurantId } =
-      req.body;
+    const { categoryId } = req.params;
+    const { tableNumber, capacity, price } = req.body; // Accept categoryId from request body
 
-      const findCategory = await TableCat.findById(id)
-      if(!findCategory) res.status(404).json({status: false, msg: 'Category id not found or category does not exit'})
-    const newTable = {
-      table_number,
-      restaurantId,
+    // Check if the category exists
+    const category = await TableCat.findById(categoryId);
+    if (!category) {
+      return res
+        .status(404)
+        .json({ success: false, msg: "Category not found" });
+    }
+
+    // Create a new table and assign the categoryId
+    const newTable = new createTableSchema({
+      tableNumber,
       capacity,
       price,
-    };
+      table_category: categoryId, // Assigning the category to the table
+    });
 
-    const tableDoc = new createTableSchema(newTable);
-    const resp = await tableDoc.save();
-    res
-      .status(201)
-      .json({ success: true, msg: "Table Successfully Created", data: resp });
+    const tableDoc = await newTable.save();
+
+    res.status(201).json({
+      success: true,
+      msg: "Table successfully created",
+      data: tableDoc,
+    });
   } catch (error) {
-    console.log(error.message);
-    res.status(500).json({ msg: "An Error Ocured While Creating Table" });
+    console.error(error.message);
+    res.status(500).json({ msg: "An error occurred while creating the table" });
   }
 };
-
-
-
 
 export const updateTable = async (req, res) => {
   try {
@@ -52,12 +57,12 @@ export const updateTable = async (req, res) => {
   }
 };
 
-
-
-
 export const getAllTable = async (req, res) => {
   try {
-    const resp = await createTableSchema.find().populate('table_category', {__v: 0}).populate('user', {password: 0, __v: 0});
+    const resp = await createTableSchema
+      .find()
+      .populate("table_category", { __v: 0 })
+      .populate("user", { password: 0, __v: 0 });
     res
       .status(200)
       .json({ success: true, msg: "Table Retrieved Successfully", data: resp });
@@ -67,9 +72,6 @@ export const getAllTable = async (req, res) => {
   }
 };
 
-
-
-
 export const deleteTable = async (req, res) => {
   try {
     const id = req.params.id;
@@ -77,9 +79,31 @@ export const deleteTable = async (req, res) => {
     if (!findTable)
       res.status(404).json({ success: false, msg: "Table id not found" });
     const resp = await createTableSchema.findByIdAndDelete(id);
-    res.status(200).json({ success: true, msg: "Table deleted successfully" });
+    res
+      .status(200)
+      .json({ success: true, msg: "Table deleted successfully", data: resp });
   } catch (error) {
     console.log(error.message);
     res.status(500).json({ msg: "An Error Ocured While Deleting Table" });
+  }
+};
+
+export const getTableByCategory = async (req, res) => {
+  try {
+    const { id } = req.params; // id = categoryId
+
+    // Find tables with matching category
+    const tables = await createTableSchema.find({ table_category: id });
+
+    res.status(200).json({
+      success: true,
+      msg: "Tables found successfully for the category.",
+      data: tables,
+    });
+  } catch (error) {
+    console.error(error.message);
+    res
+      .status(500)
+      .json({ msg: "An error occurred while retrieving tables by category." });
   }
 };
