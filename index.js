@@ -6,8 +6,6 @@ import cors from "cors";
 import userRouter from "./routes/userRoutes.js";
 import InventoryRouter from "./routes/inventoryRoutes.js";
 import StockRouter from "./routes/stockRoutes.js";
-import restaurantRouter from "./routes/restaurantRoutes.js";
-import LocationRouter from "./routes/locationRoutes.js";
 
 dotenv.config();
 connectDB();
@@ -41,8 +39,6 @@ app.use(cors(corsOptions));
 app.use("/api/v1", userRouter);
 app.use("/api/v1", InventoryRouter);
 app.use("/api/v1", StockRouter);
-app.use("/api/v1", restaurantRouter);
-app.use("/api/v1", LocationRouter);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
