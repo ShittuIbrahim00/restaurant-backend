@@ -1,32 +1,29 @@
 import User from "../models/userModel.js";
 import TableReserve from "../models/TableReserve.js";
 import createTableSchema from "../models/CreateTable.js";
+
 export const createReserveTable = async (req, res) => {
   try {
     const { tableId } = req.params;
-    const { userId, reservation_Date, reservation_Time, qty_persons } =
-      req.body;
+    const { reservation_Date, reservation_Time, qty_persons } = req.body;
+    const userId = req.user.id;
 
     // Check if table exists
     const table = await createTableSchema.findById(tableId);
     if (!table) {
-      return res.status(404).json({ success: false, msg: "Table not found" });
-    }
-
-    // Check if user exists
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ success: false, msg: "User not found" });
+      return res.status(404).json({
+        success: false,
+        msg: "Table not found"
+      });
     }
 
     if (qty_persons > table.capacity) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          msg: `This table can only accomodate ${table.capacity} peoples`,
-        });
+      return res.status(400).json({
+        success: false,
+        msg: `This table can only accommodate ${table.capacity} people`,
+      });
     }
+
     // Create reservation
     const reservation = new TableReserve({
       reservation_Date,
@@ -37,7 +34,6 @@ export const createReserveTable = async (req, res) => {
     });
 
     const saved = await reservation.save();
-
     res.status(201).json({
       success: true,
       msg: "Table reserved successfully",
@@ -45,9 +41,9 @@ export const createReserveTable = async (req, res) => {
     });
   } catch (error) {
     console.error(error.message);
-    res
-      .status(500)
-      .json({ msg: "An error occurred while reserving the table" });
+    res.status(500).json({
+      msg: "An error occurred while reserving the table"
+    });
   }
 };
 
