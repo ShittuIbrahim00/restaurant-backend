@@ -12,6 +12,9 @@ import StockRouter from "./routes/stockRoutes.js";
 import restaurantRouter from "./routes/restaurantRoutes.js";
 import LocationRouter from "./routes/locationRoutes.js";
 
+import tableRouter from './routes/tableRoute.js'
+import reserveRouter from "./routes/reservetableRoute.js"
+import categoryRoute from './routes/TableCategoryRoute.js'
 dotenv.config();
 connectDB();
 
@@ -44,12 +47,15 @@ app.use(cors(corsOptions));
 app.use("/api/v1", userRouter);
 app.use("/api/v1", InventoryRouter);
 app.use("/api/v1", StockRouter);
-
+app.use('/api/v1', tableRouter)
+app.use("/api/v1", reserveRouter)
+app.use("/api/v1", categoryRoute)
 app.use("/api/v1", categoryRouter);
 app.use("/api/v1", menuRouter);
 app.use("/api/v1", orderRouter);
-app.use("/api/v1", restaurantRouter)
-app.use("/api/v1", LocationRouter)
+app.use("/api/v1", restaurantRouter);
+app.use("/api/v1", LocationRouter);
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
