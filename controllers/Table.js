@@ -2,8 +2,7 @@ import createTableSchema from "../models/CreateTable.js";
 import TableCat from "../models/TableCategory.js";
 export const createTable = async (req, res) => {
   try {
-    const { categoryId } = req.params;
-    const { tableNumber, capacity, price } = req.body; // Accept categoryId from request body
+    const { tableNumber, capacity, price, categoryId } = req.body; // Accept categoryId from request body
 
     // Check if the category exists
     const category = await TableCat.findById(categoryId);
