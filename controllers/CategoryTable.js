@@ -1,10 +1,10 @@
 import TableCat from "../models/TableCategory.js";
-import Table from "../models/CreateTable.js";
+import createTableSchema from "../models/CreateTable.js";
 
 export const createTableCategory = async (req, res) => {
   try {
     const createCategory = {
-      name: req.body,
+      name: req.body.name,
     };
     const resp = new TableCat(createCategory);
     const create = await resp.save();
@@ -52,11 +52,6 @@ export const updateTableCategory = async (req, res) => {
 export const deleteTableCategory = async (req, res) => {
   try {
     const { id } = req.params;
-
-    // Validate the ObjectId
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ success: false, msg: "Invalid category ID format" });
-    }
 
     const category = await TableCat.findById(id);
     if (!category) {

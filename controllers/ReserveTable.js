@@ -97,24 +97,25 @@ export const getAllReserveTable = async (req, res) => {
 
 export const deleteReserveTable = async (req, res) => {
   try {
-    const tableId = req.params.id;
-    const find = TableReserve.findById(tableId);
-    if (!find)
-      res.status(404).json({
+    const id = req.params.id; // Assuming your route is defined as '/path/:id'
+    const find = await TableReserve.findById(id);
+    if (!find) {
+      return res.status(404).json({
         success: false,
         msg: "Table id not found or table does not exist",
       });
+    }
 
-    const deletereTable = TableReserve.findByIdAndDelete(tableId);
+    const deletedTable = await TableReserve.findByIdAndDelete(id);
     res.status(200).json({
       success: true,
       msg: "Successfully deleted reserve table",
-      data: deletereTable,
+      data: deletedTable,
     });
   } catch (error) {
     console.log(error.message);
-    res
-      .status(500)
-      .json({ msg: "An Error Ocured While Deleting Reserve Table" });
+    res.status(500).json({
+      msg: "An Error Occurred While Deleting Reserve Table"
+    });
   }
 };
