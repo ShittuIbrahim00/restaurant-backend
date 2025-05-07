@@ -8,5 +8,10 @@ CategoryRoute.put('/update-table-category/:id', protect, authorizeRoles('admin')
 CategoryRoute.delete('/delete-table-category/:id', protect, authorizeRoles('admin'), deleteTableCategory)
 CategoryRoute.get('/get-all-category', protect, authorizeRoles('admin'), getAllTableCategory)
 
+// CategoryRoute.post('/create-table-category', createTableCategory)
+// CategoryRoute.put('/update-table-category/:id',  updateTableCategory)
+// CategoryRoute.delete('/delete-table-category/:id',deleteTableCategory)
+// CategoryRoute.get('/get-all-category', getAllTableCategory)
+
 export default CategoryRoute;
 

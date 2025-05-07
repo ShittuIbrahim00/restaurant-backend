@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const schema = mongoose.Schema;
 
 const createTable = new schema({
-  table_category: {required: true, type: mongoose.Schema.Types.ObjectId, ref: 'Table-Category'},
+  table_category: {type: mongoose.Schema.Types.ObjectId, ref: 'Table-Category'},
   tableNumber: { required: true, type: Number },
   capacity: { required: true, type: Number },
   price: { required: true, type: String },

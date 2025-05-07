@@ -4,9 +4,8 @@ import createTableSchema from "../models/CreateTable.js";
 
 export const createReserveTable = async (req, res) => {
   try {
-    const { tableId } = req.params;
-    const { reservation_Date, reservation_Time, qty_persons } = req.body;
-    const userId = req.user.id;
+    const tableId = req.params._id;
+    const { reservation_Date, reservation_Time, name, email, phone, qty_persons, userId } = req.body;
 
     // Check if table exists
     const table = await createTableSchema.findById(tableId);
@@ -26,11 +25,14 @@ export const createReserveTable = async (req, res) => {
 
     // Create reservation
     const reservation = new TableReserve({
+      table: tableId,
+      user: userId, // Add the user if you have a logged-in user system
       reservation_Date,
       reservation_Time,
       qty_persons,
-      user: userId,
-      table: tableId,
+      name,
+      phone,
+      email,
     });
 
     const saved = await reservation.save();
@@ -46,6 +48,7 @@ export const createReserveTable = async (req, res) => {
     });
   }
 };
+
 
 export const updateReserveTable = async (req, res) => {
   try {
@@ -74,22 +77,23 @@ export const updateReserveTable = async (req, res) => {
 
 export const getAllReserveTable = async (req, res) => {
   try {
-    const resp = await TableReserve.find().populate("table").populate("user", {
-      password: 0,
-      __v: 0,
-    });
+    const resp = await TableReserve.find()
+      .populate("table")
+      .populate("user", { password: 0, __v: 0 });
+
     res.status(200).json({
       success: true,
-      msg: "Succesfully Retrieved All Reserve Table",
+      msg: "Successfully Retrieved All Reserve Tables",
       data: resp,
     });
   } catch (error) {
     console.log(error.message);
-    res
-      .status(500)
-      .json({ msg: "An Error Ocured While Retrieving Reserve Table" });
+    res.status(500).json({
+      msg: "An Error Occurred While Retrieving Reserve Tables"
+    });
   }
 };
+
 
 export const deleteReserveTable = async (req, res) => {
   try {

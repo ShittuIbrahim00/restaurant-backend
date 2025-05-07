@@ -8,4 +8,12 @@ tableRouter.get('/get-all-table', getAllTable)
 tableRouter.delete('/delete-table/:id',protect, authorizeRoles("admin"), deleteTable)
 tableRouter.put('/update-table/:id', protect, authorizeRoles("admin"), updateTable)
 tableRouter.get('/get-table-category/:id', getTableByCategory)
+
+
+
+// tableRouter.post('/create-table/:categoryId', createTable)
+// tableRouter.get('/get-all-table', getAllTable)
+// tableRouter.delete('/delete-table/:id', deleteTable)
+// tableRouter.put('/update-table/:id',  updateTable)
+// tableRouter.get('/get-table-category/:id', getTableByCategory)
 export default tableRouter

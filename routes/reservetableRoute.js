@@ -9,4 +9,12 @@ reserveRouter.put('/update-reserve-table/:id', protect, updateReserveTable)
 reserveRouter.delete('/delete-reserve-table/:id', protect, authorizeRoles('admin'), deleteReserveTable)
 
 
+
+
+// reserveRouter.post('/create-reserve-table/:_id', createReserveTable)
+// reserveRouter.get('/getAll-reserve-table',getAllReserveTable)
+// reserveRouter.put('/update-reserve-table/:id', protect, updateReserveTable) 
+// reserveRouter.delete('/delete-reserve-table/:id',  deleteReserveTable)
+
+
 export default reserveRouter
