@@ -19,6 +19,20 @@ export const createMenu = async (req, res)=> {
     }
 };
 
+export const getMenu = async (req,res) => {
+    try {
+       const menus = await Menu.find();
+       res.status(200).json({
+        success:true,
+        message:"All menus",
+        menus
+       })
+    } catch (err) {
+        console.error("Error fetching menus", err);
+        res.status(500).json({message:"Internal server error"});
+    }
+}
+
 
 //get menu by category
 export const getMenuByCategory = async (req, res) => {

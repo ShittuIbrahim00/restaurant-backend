@@ -31,4 +31,21 @@ export const createCategory =async (req, res) => {
     } catch (error) {
        res.status(500).json({success:false, message:error.message}) 
     }
+};
+
+export const getCategory = async(req,res) => {
+    try {
+        const categories = await Category.find();
+        res.status(200).json({
+            success:true,
+            message:"All categories",
+            categories
+        });
+    } catch (err) {
+        console.log(err)
+        res.send({
+            status:500,
+            msg:"An error Occured"
+        });
+    }
 }
