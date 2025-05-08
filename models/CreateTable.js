@@ -4,8 +4,8 @@ const schema = mongoose.Schema;
 
 const createTable = new schema({
   table_category: {type: mongoose.Schema.Types.ObjectId, ref: 'Table-Category'},
-  tableNumber: { required: true, type: Number },
-  capacity: { required: true, type: Number },
+  tableNumber: { required: true, type: String },
+  capacity: { required: true, type: String },
   price: { required: true, type: String },
   user: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
   date_created: {type: Date, default: Date.now(), required: true},

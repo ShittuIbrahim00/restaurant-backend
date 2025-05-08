@@ -5,7 +5,7 @@ import createTableSchema from "../models/CreateTable.js";
 export const createReserveTable = async (req, res) => {
   try {
     const tableId = req.params._id;
-    const { reservation_Date, reservation_Time, name, email, phone, qty_persons, userId } = req.body;
+    const { reservation_Date, reservation_Time, qty_persons, userId } = req.body;
 
     // Check if table exists
     const table = await createTableSchema.findById(tableId);
@@ -26,13 +26,10 @@ export const createReserveTable = async (req, res) => {
     // Create reservation
     const reservation = new TableReserve({
       table: tableId,
-      user: userId, // Add the user if you have a logged-in user system
+      user: '',
       reservation_Date,
       reservation_Time,
       qty_persons,
-      name,
-      phone,
-      email,
     });
 
     const saved = await reservation.save();
