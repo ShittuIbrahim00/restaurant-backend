@@ -4,15 +4,24 @@ import createTableSchema from "../models/CreateTable.js";
 
 export const createReserveTable = async (req, res) => {
   try {
-    const tableId = req.params._id;
-    const { reservation_Date, reservation_Time, qty_persons, userId } = req.body;
+    const { tableNumber, reservation_Date, reservation_Time, qty_persons, userId } = req.body;
 
-    // Check if table exists
-    const table = await createTableSchema.findById(tableId);
+   
+    const lastTable = await createTableSchema.find().sort({ tableNumber: -1 }).limit(1);
+    
+    if (lastTable.length > 0 && tableNumber <= lastTable[0].tableNumber) {
+      return res.status(400).json({
+        success: false,
+        msg: `Table number should be greater than ${lastTable[0].tableNumber}. Please choose a valid number.`,
+      });
+    }
+
+    // Proceed to create reservation (as before)
+    const table = await createTableSchema.findById(req.params._id);
     if (!table) {
       return res.status(404).json({
         success: false,
-        msg: "Table not found"
+        msg: "Table not found",
       });
     }
 
@@ -25,26 +34,27 @@ export const createReserveTable = async (req, res) => {
 
     // Create reservation
     const reservation = new TableReserve({
-      table: tableId,
-      user: '',
+      table: table._id,
+      user: userId, // Add userId from request body
       reservation_Date,
       reservation_Time,
       qty_persons,
     });
 
-    const saved = await reservation.save();
+    const savedReservation = await reservation.save();
     res.status(201).json({
       success: true,
       msg: "Table reserved successfully",
-      data: saved,
+      data: savedReservation,
     });
   } catch (error) {
     console.error(error.message);
     res.status(500).json({
-      msg: "An error occurred while reserving the table"
+      msg: "An error occurred while reserving the table",
     });
   }
 };
+
 
 
 export const updateReserveTable = async (req, res) => {

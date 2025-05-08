@@ -1,10 +1,19 @@
 import createTableSchema from "../models/CreateTable.js";
 import TableCat from "../models/TableCategory.js";
+import TableReserve from "../models/TableReserve.js";
 export const createTable = async (req, res) => {
   try {
-    const { capacity, price,tableNumber, categoryId } = req.body; 
+    const { capacity, price, tableNumber, categoryId } = req.body;
 
     // Check if the category exists
+
+    const existingTable = await createTableSchema.findOne({ tableNumber });
+    if (existingTable) {
+      return res.status(400).json({
+        success: false,
+        msg: `Table number ${tableNumber} already exists. Please choose a different number.`,
+      });
+    }
     const category = await TableCat.findById(categoryId);
     if (!category) {
       return res
@@ -37,6 +46,9 @@ export const updateTable = async (req, res) => {
   try {
     const id = req.params.id;
     const tableId = await createTableSchema.findById(id);
+
+   
+ 
     if (!tableId)
       res.status(404).json({
         success: false,
@@ -60,30 +72,55 @@ export const getAllTable = async (req, res) => {
   try {
     const resp = await createTableSchema
       .find()
-      .populate("table_category", { __v: 0 })
+      .populate("categoryId")
       .populate("user", { password: 0, __v: 0 });
-    res
-      .status(200)
-      .json({ success: true, msg: "Table Retrieved Successfully", data: resp });
+
+    res.status(200).json({
+      success: true,
+      msg: "Table Retrieved Successfully",
+      data: resp,
+    });
   } catch (error) {
     console.log(error.message);
-    res.status(500).json({ msg: "An Error Ocured While Retrieving Tables" });
+    res.status(500).json({ msg: "An Error Occurred While Retrieving Tables" });
   }
 };
 
 export const deleteTable = async (req, res) => {
   try {
     const id = req.params.id;
+
     const findTable = await createTableSchema.findById(id);
-    if (!findTable)
-      res.status(404).json({ success: false, msg: "Table id not found" });
-    const resp = await createTableSchema.findByIdAndDelete(id);
-    res
-      .status(200)
-      .json({ success: true, msg: "Table deleted successfully", data: resp });
+    if (!findTable) {
+      return res.status(404).json({
+        success: false,
+        msg: "Table ID not found",
+      });
+    }
+
+    const reservations = await TableReserve.find({ table: id });
+    if (reservations.length > 0) {
+      return res.status(400).json({
+        success: false,
+        msg: "Cannot delete table, it has active reservations.",
+      });
+    }
+
+    // Step 3: Delete the table
+    await createTableSchema.findByIdAndDelete(id);
+
+    const resp = await createTableSchema.find().populate("categoryId");
+    res.status(200).json({
+      success: true,
+      msg: "Table deleted successfully",
+      data: resp,
+    });
   } catch (error) {
     console.log(error.message);
-    res.status(500).json({ msg: "An Error Ocured While Deleting Table" });
+    res.status(500).json({
+      success: false,
+      msg: "An error occurred while deleting the table",
+    });
   }
 };
 
