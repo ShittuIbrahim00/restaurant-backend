@@ -84,7 +84,7 @@ export const getAllTableCategory = async (req, res) => {
     res
       .status(200)
       .json({
-        status: true,
+        sucess: true,
         msg: "Successfully retrieved the data",
         data: resp,
       });
