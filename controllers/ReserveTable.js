@@ -4,20 +4,22 @@ import createTableSchema from "../models/CreateTable.js";
 
 export const createReserveTable = async (req, res) => {
   try {
-    const { tableNumber, reservation_Date, reservation_Time, qty_persons, userId } = req.body;
+    const { reservation_Date, reservation_Time, qty_persons, userId } = req.body;
 
-   
-    const lastTable = await createTableSchema.find().sort({ tableNumber: -1 }).limit(1);
-    
-    if (lastTable.length > 0 && tableNumber <= lastTable[0].tableNumber) {
-      return res.status(400).json({
-        success: false,
-        msg: `Table number should be greater than ${lastTable[0].tableNumber}. Please choose a valid number.`,
-      });
+    // Check if user exists
+    const findUser = await User.findById(userId);
+    if (!findUser) {
+      return res.status(404).json({ success: false, msg: 'User not found or does not exist' });
     }
 
-    // Proceed to create reservation (as before)
-    const table = await createTableSchema.findById(req.params._id);
+    // Check if table ID is provided
+    const tableId = req.params._id;
+    if (!tableId) {
+      return res.status(400).json({ success: false, msg: "Table ID is required" });
+    }
+
+    // Find the table
+    const table = await createTableSchema.findById(tableId);
     if (!table) {
       return res.status(404).json({
         success: false,
@@ -25,6 +27,7 @@ export const createReserveTable = async (req, res) => {
       });
     }
 
+    // Check table capacity
     if (qty_persons > table.capacity) {
       return res.status(400).json({
         success: false,
@@ -35,7 +38,7 @@ export const createReserveTable = async (req, res) => {
     // Create reservation
     const reservation = new TableReserve({
       table: table._id,
-      user: userId, // Add userId from request body
+      user: userId,
       reservation_Date,
       reservation_Time,
       qty_persons,
@@ -48,12 +51,13 @@ export const createReserveTable = async (req, res) => {
       data: savedReservation,
     });
   } catch (error) {
-    console.error(error.message);
+    console.error(error);
     res.status(500).json({
       msg: "An error occurred while reserving the table",
     });
   }
 };
+
 
 
 
