@@ -25,11 +25,16 @@ export const protect = async (req, res, next) => {
   }
 };
 
+
+
 export const authorizeRoles = (...roles) => {
   return (req, res, next) => {
+    // console.log("User Role in authorizeRoles middleware:", req.user.role);
+    // console.log("Allowed Roles:", roles);
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({ message: "Forbidden: Access denied" });
     }
     next();
   };
 };
+

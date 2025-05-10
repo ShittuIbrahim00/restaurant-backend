@@ -70,23 +70,29 @@ export const adminCreateUser = async (req, res) => {
 };
 
 // Branch Manager Creates Staff (not admin)
-
 export const staffCreateUser = async (req, res) => {
   try {
-    if (req.user.role !== "branch-manager") {
-      return res.status(403).json({ message: "Only branch manager can create staff roles" });
+    const loggedInRole = req.user.role; // Get role of the person making the request
+
+    if (!["branch-manager", "restaurant-owner"].includes(loggedInRole)) {
+      return res.status(403).json({
+        message: "Only branch manager and restaurant owner can create staff roles",
+      });
     }
 
     const { name, email, password, role } = req.body;
 
-    const allowedRoles = ["receptionist", "waiter", "chef"];
+    const allowedRoles = ["receptionist", "waiter", "chef", "branch-manager"];
     if (!allowedRoles.includes(role)) {
-      return res.status(403).json({ message: "Branch manager can only create staff roles" });
+      return res.status(403).json({
+        message: "Branch manager and restaurant owner can only create staff roles",
+      });
     }
 
     const existing = await UserSchema.findOne({ email });
-    if (existing)
+    if (existing) {
       return res.status(400).json({ message: "User already exists" });
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await UserSchema.create({ name, email, password: hashedPassword, role });
@@ -114,22 +120,8 @@ export const getUserById = async (req, res) => {
 
     if (!targetUser) return res.status(404).json({ message: "User not found" });
 
-    // Admin can access any
-    if (req.user.role === "admin") {
-      return res.status(200).json(targetUser);
-    }
-
-    // Customer can access themselves only
-    if ( req.user.role === "customer" && req.user._id.toString() === userId) {
-      return res.status(200).json(targetUser);
-    }
-
-    // Staffs can view themselves only
-    if ( req.user.role === "waiter" && req.user._id.toString() === userId) {
-      return res.status(200).json(targetUser);
-    }
-
-    return res.status(403).json({ message: "Access denied" });
+    return res.status(200).json(targetUser);
+    
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

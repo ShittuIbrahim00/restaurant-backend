@@ -4,9 +4,9 @@ import { createReserveTable, deleteReserveTable, updateReserveTable, getAllReser
 import {protect, authorizeRoles} from '../middlewares/authMiddleware.js'
 
 reserveRouter.post('/create-reserve-table/:tableId', protect, createReserveTable)
-reserveRouter.get('/getAll-reserve-table', protect, authorizeRoles('restaurant-owner'), getAllReserveTable)
+reserveRouter.get('/getAll-reserve-table', protect, authorizeRoles('restaurant-owner', 'admin'), getAllReserveTable)
 reserveRouter.put('/update-reserve-table/:id', protect, updateReserveTable) 
-reserveRouter.delete('/delete-reserve-table/:id', protect, authorizeRoles('admin'), deleteReserveTable)
+reserveRouter.delete('/delete-reserve-table/:id', protect, authorizeRoles('resraurant-owner', 'admin'), deleteReserveTable)
 
 
 
