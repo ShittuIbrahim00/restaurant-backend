@@ -6,36 +6,54 @@ export const createReserveTable = async (req, res) => {
   try {
     const { reservation_Date, reservation_Time, qty_persons, userId } = req.body;
 
+    // Validate user ID
+    if (!userId) {
+      return res.status(400).json({ success: false, msg: 'User ID is required' });
+    }
+
     // Check if user exists
     const findUser = await User.findById(userId);
     if (!findUser) {
-      return res.status(404).json({ success: false, msg: 'User not found or does not exist' });
+      return res.status(404).json({ success: false, msg: 'User not found' });
     }
 
-    // Check if table ID is provided
-    const tableId = req.params._id;
+    // Validate table ID
+    const tableId = req.params.tableId;
     if (!tableId) {
-      return res.status(400).json({ success: false, msg: "Table ID is required" });
+      return res.status(400).json({ success: false, msg: 'Table ID is required' });
     }
 
     // Find the table
     const table = await createTableSchema.findById(tableId);
     if (!table) {
-      return res.status(404).json({
-        success: false,
-        msg: "Table not found",
-      });
+      return res.status(404).json({ success: false, msg: 'Table not found' });
     }
 
-    // Check table capacity
+    // Validate table capacity
     if (qty_persons > table.capacity) {
-      return res.status(400).json({
-        success: false,
-        msg: `This table can only accommodate ${table.capacity} people`,
-      });
+      return res.status(400).json({ success: false, msg: `This table can only accommodate ${table.capacity} people` });
     }
 
-    // Create reservation
+    // Check for conflicting reservation
+    const conflictingReservation = await TableReserve.findOne({
+      table: table._id,
+      reservation_Date,
+      reservation_Time,
+    });
+
+    if (conflictingReservation) {
+      return res.status(409).json({ success: false, msg: 'This table is already reserved for the selected date and time' });
+    }
+
+    // Set table as reserved
+    table.isReserved = true;
+    const savedTable = await table.save();
+
+    if (!savedTable) {
+      return res.status(500).json({ success: false, msg: 'Failed to set table as reserved' });
+    }
+
+    // Create the reservation
     const reservation = new TableReserve({
       table: table._id,
       user: userId,
@@ -45,18 +63,50 @@ export const createReserveTable = async (req, res) => {
     });
 
     const savedReservation = await reservation.save();
+
     res.status(201).json({
       success: true,
-      msg: "Table reserved successfully",
+      msg: 'Table reserved successfully',
       data: savedReservation,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({
-      msg: "An error occurred while reserving the table",
-    });
+    res.status(500).json({ msg: 'An error occurred while reserving the table' });
   }
 };
+
+
+
+export const cancelReserveTable = async (req, res) => {
+  try {
+    const { reservationId } = req.params;
+
+    // Find the reservation
+    const reservation = await TableReserve.findById(reservationId);
+    if (!reservation) {
+      return res.status(404).json({ success: false, msg: 'Reservation not found' });
+    }
+
+    // Find the table
+    const table = await createTableSchema.findById(reservation.table);
+    if (!table) {
+      return res.status(404).json({ success: false, msg: 'Table not found' });
+    }
+
+    // Set table as not reserved
+    table.isReserved = false;
+    await table.save();
+
+    // Delete the reservation
+    await TableReserve.findByIdAndDelete(reservationId);
+
+    res.status(200).json({ success: true, msg: 'Reservation canceled successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ msg: 'An error occurred while canceling the reservation' });
+  }
+};
+
 
 
 

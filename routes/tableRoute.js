@@ -4,7 +4,7 @@ import { createTable, getAllTable, deleteTable, updateTable, getTableByCategory 
 import { authorizeRoles, protect } from "../middlewares/authMiddleware.js";
 
 tableRouter.post('/create-table', protect, authorizeRoles("admin", "restaurant-owner"), createTable)
-tableRouter.get('/get-all-table',protect, authorizeRoles('restaurant-owner', "admin"), getAllTable)
+tableRouter.get('/get-all-table', getAllTable)
 tableRouter.delete('/delete-table/:id',protect, authorizeRoles("admin", "restaurant-owner"), deleteTable)
 tableRouter.put('/update-table/:id', protect, authorizeRoles("admin", "restaurant-owner"), updateTable)
 tableRouter.get('/get-table-category/:id', getTableByCategory)
