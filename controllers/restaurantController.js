@@ -56,45 +56,50 @@ export const getAllRestaurants = async (req, res) => {
     }
   };
 
-  // Update Restaurant - Admin only
+// Update Restaurant - Only Admin
 export const updateRestaurant = async (req, res) => {
-    try {
-      const user = req.user;
-  
-      if (user.role !== "admin") {
-        return res.status(403).json({ message: "Only admins can update restaurants" });
-      }
-  
-      const { id } = req.params;
-      const updates = req.body;
-  
-      const restaurant = await RestaurantSchema.findByIdAndUpdate(id, updates, {
-        new: true,
-        runValidators: true,
-      });
-  
-      if (!restaurant) {
-        return res.status(404).json({ message: "Restaurant not found" });
-      }
-  
-      res.status(200).json({ message: "Restaurant updated", restaurant });
-    } catch (err) {
-      res.status(500).json({ message: "Server error", error: err.message });
-    }
-  };
-  
-
-// Delete Restaurant (and its Locations) - Only admin
-export const deleteRestaurant = async (req, res) => {
   try {
-    const { id } = req.query;
+    const user = req.user;
 
-    const restaurant = await RestaurantSchema.findOneAndDelete({ _id: id });
+    if (user.role !== "admin") {
+      return res.status(403).json({ message: "Only admins can update restaurants" });
+    }
+
+    const { id } = req.params;
+    const updates = req.body;
+
+    const restaurant = await RestaurantSchema.findByIdAndUpdate(id, updates, {
+      new: true,
+      runValidators: true,
+    });
+
     if (!restaurant) {
       return res.status(404).json({ message: "Restaurant not found" });
     }
 
-    // Location deletion is handled by the schema pre hook
+    res.status(200).json({ message: "Restaurant updated", restaurant });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
+// Delete Restaurant - Only Admin
+export const deleteRestaurant = async (req, res) => {
+  try {
+    const user = req.user;
+
+    if (user.role !== "admin") {
+      return res.status(403).json({ message: "Only admins can delete restaurants" });
+    }
+
+    const { id } = req.params;
+
+    const restaurant = await RestaurantSchema.findByIdAndDelete(id);
+    if (!restaurant) {
+      return res.status(404).json({ message: "Restaurant not found" });
+    }
+
+    // Location deletion handled via Mongoose pre-hook
     res.status(200).json({ message: "Restaurant and associated locations deleted" });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });

@@ -8,6 +8,6 @@ restaurantRouter.post("/create-restaurant", createRestaurant);
 restaurantRouter.get("/restaurants", getAllRestaurants);
 restaurantRouter.get("/restaurant", getRestaurantById);
 restaurantRouter.put("/restaurant", protect, authorizeRoles("admin"), updateRestaurant);
-restaurantRouter.delete("/restaurant", deleteRestaurant);
+restaurantRouter.delete("/restaurant", protect, authorizeRoles("admin"), deleteRestaurant);
 
 export default restaurantRouter;
