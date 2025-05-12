@@ -7,5 +7,6 @@ const menuRouter = express.Router()
 
 menuRouter.post("/create-menu", protect, authorizeRoles("admin"), createMenu)
 menuRouter.get("/category/:categoryId/menus", getMenuByCategory);
-menuRouter.get("/get-menu",  getMenu)
+menuRouter.get("/get-menu",  getMenu);
+
 export default menuRouter;
