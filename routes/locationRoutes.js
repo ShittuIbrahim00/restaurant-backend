@@ -9,6 +9,6 @@ LocationRouter.get("/restaurant-locations", getLocationsByRestaurant);
 LocationRouter.get("/restaurant-location", getLocationById);
 LocationRouter.put("/restaurant-location/:id", protect, authorizeRoles("admin", "restaurant-owner"), updateLocation);
 
-LocationRouter.delete("/restaurant-location?:id", protect, authorizeRoles("admin", "restaurant-owner"), deleteLocation);
+LocationRouter.delete("/restaurant-location", protect, authorizeRoles("admin", "restaurant-owner"), deleteLocation);
 
 export default LocationRouter;
