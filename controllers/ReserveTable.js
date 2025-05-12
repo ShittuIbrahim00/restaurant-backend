@@ -21,7 +21,7 @@ export const createReserveTable = async (req, res) => {
     }
 
     // Validate table ID
-    const tableId = req.params.tableId;
+    const tableId = req.params;
     if (!tableId) {
       return res
         .status(400)
@@ -34,8 +34,15 @@ export const createReserveTable = async (req, res) => {
       return res.status(404).json({ success: false, msg: "Table not found" });
     }
 
-    // Validate table capacity
-    if (qty_persons > table.capacity) {
+    // Convert qty_persons to a number and validate capacity
+    const quantity = parseInt(qty_persons, 10);
+    if (isNaN(quantity) || quantity <= 0) {
+      return res
+        .status(400)
+        .json({ success: false, msg: "Invalid number of persons" });
+    }
+
+    if (quantity > table.capacity) {
       return res.status(400).json({
         success: false,
         msg: `This table can only accommodate ${table.capacity} people`,
@@ -72,7 +79,7 @@ export const createReserveTable = async (req, res) => {
       user: userId,
       reservation_Date,
       reservation_Time,
-      qty_persons,
+      qty_persons: quantity, // Store as a number
     });
 
     const savedReservation = await reservation.save();
@@ -86,7 +93,10 @@ export const createReserveTable = async (req, res) => {
     console.error(error);
     res
       .status(500)
-      .json({ msg: "An error occurred while reserving the table" });
+      .json({
+        success: false,
+        msg: "An error occurred while reserving the table",
+      });
   }
 };
 
@@ -135,7 +145,7 @@ export const getSingleReserveTable = async (req, res) => {
         .status(404)
         .json({ success: false, msg: "Reservation id required" });
     }
-    const findReserveTableByID = await TableReserve.findById(reservationId);
+    const findReserveTableByID = await TableReserve.findById(reservationId).populate('user', {__v: 0, password: 0}).populate('table', {__v:0})
     if (!findReserveTableByID) {
       return res
         .status(404)
