@@ -7,7 +7,7 @@ const restaurantRouter = express.Router();
 restaurantRouter.post("/create-restaurant", createRestaurant);
 restaurantRouter.get("/restaurants", getAllRestaurants);
 restaurantRouter.get("/restaurant", getRestaurantById);
-restaurantRouter.put("/restaurant", protect, authorizeRoles("admin"), updateRestaurant);
-restaurantRouter.delete("/restaurant", protect, authorizeRoles("admin"), deleteRestaurant);
+restaurantRouter.put("/restaurant/:id", protect, authorizeRoles("admin"), updateRestaurant);
+restaurantRouter.delete("/restaurant/:id", protect, authorizeRoles("admin"), deleteRestaurant);
 
 export default restaurantRouter;
