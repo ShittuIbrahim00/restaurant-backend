@@ -68,7 +68,7 @@ export const updateRestaurant = async (req, res) => {
       const { id } = req.params;
       const updates = req.body;
   
-      const restaurant = await Restaurant.findByIdAndUpdate(id, updates, {
+      const restaurant = await RestaurantSchema.findByIdAndUpdate(id, updates, {
         new: true,
         runValidators: true,
       });
