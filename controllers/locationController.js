@@ -48,7 +48,7 @@ export const getLocationsByRestaurant = async (req, res) => {
   // Get a single location by ID
   export const getLocationById = async (req, res) => {
     try {
-      const { id } = req.query;
+      const { id } = req.params;
   
       const location = await LocationSchema.findById(id).populate("restaurant", "name");
       if (!location) {
@@ -68,14 +68,14 @@ export const updateLocation = async (req, res) => {
       const { id } = req.params;
       const updates = req.body;
   
-      const location = await Location.findById(id).populate("restaurant");
+      const location = await LocationSchema.findById(id).populate("restaurant");
   
       if (!location) {
         return res.status(404).json({ message: "Location not found" });
       }
   
       if (user.role === "admin" || (user.role === "restaurant-owner" && location.restaurant.owner.equals(user._id))) {
-        const updatedLocation = await Location.findByIdAndUpdate(id, updates, {
+        const updatedLocation = await LocationSchema.findByIdAndUpdate(id, updates, {
           new: true,
           runValidators: true,
         });
@@ -93,7 +93,7 @@ export const updateLocation = async (req, res) => {
 export const deleteLocation = async (req, res) => {
   try {
     const user = req.user;
-    const { id } = req.query;
+    const { id } = req.params;
 
     const location = await LocationSchema.findById(id).populate("restaurant");
     if (!location) {
