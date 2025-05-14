@@ -1,45 +1,34 @@
 import User from "../models/userModel.js";
 import TableReserve from "../models/TableReserve.js";
 import createTableSchema from "../models/CreateTable.js";
+import UserSchema from "../models/userModel.js";
 
 export const createReserveTable = async (req, res) => {
   try {
-    const { reservation_Date, reservation_Time, qty_persons, userId } =
-      req.body;
+    const { reservation_Date, reservation_Time, qty_persons, userId } = req.body;
 
-    // Validate user ID
     if (!userId) {
-      return res
-        .status(400)
-        .json({ success: false, msg: "User ID is required" });
+      return res.status(400).json({ success: false, msg: "User ID is required" });
     }
 
-    // Check if user exists
-    const findUser = await User.findById(userId);
+    const findUser = await UserSchema.findById(userId);
     if (!findUser) {
       return res.status(404).json({ success: false, msg: "User not found" });
     }
 
-    // Validate table ID
-    const tableId = req.params;
+    const tableId = req.params._id; // ✅ FIXED
     if (!tableId) {
-      return res
-        .status(400)
-        .json({ success: false, msg: "Table ID is required" });
+      return res.status(400).json({ success: false, msg: "Table ID is required" });
     }
 
-    // Find the table
     const table = await createTableSchema.findById(tableId);
     if (!table) {
       return res.status(404).json({ success: false, msg: "Table not found" });
     }
 
-    // Convert qty_persons to a number and validate capacity
     const quantity = parseInt(qty_persons, 10);
     if (isNaN(quantity) || quantity <= 0) {
-      return res
-        .status(400)
-        .json({ success: false, msg: "Invalid number of persons" });
+      return res.status(400).json({ success: false, msg: "Invalid number of persons" });
     }
 
     if (quantity > table.capacity) {
@@ -49,7 +38,6 @@ export const createReserveTable = async (req, res) => {
       });
     }
 
-    // Check for conflicting reservation
     const conflictingReservation = await TableReserve.findOne({
       table: table._id,
       reservation_Date,
@@ -63,23 +51,15 @@ export const createReserveTable = async (req, res) => {
       });
     }
 
-    // Set table as reserved
     table.isReserved = true;
-    const savedTable = await table.save();
+    await table.save();
 
-    if (!savedTable) {
-      return res
-        .status(500)
-        .json({ success: false, msg: "Failed to set table as reserved" });
-    }
-
-    // Create the reservation
     const reservation = new TableReserve({
       table: table._id,
       user: userId,
       reservation_Date,
       reservation_Time,
-      qty_persons: quantity, // Store as a number
+      qty_persons: quantity,
     });
 
     const savedReservation = await reservation.save();
@@ -91,14 +71,11 @@ export const createReserveTable = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        msg: "An error occurred while reserving the table",
-      });
+    res.status(500).json({ success: false, msg: "An error occurred while reserving the table" });
   }
 };
+
+
 
 export const cancelReserveTable = async (req, res) => {
   try {
@@ -166,26 +143,28 @@ export const getSingleReserveTable = async (req, res) => {
 
 export const updateReserveTable = async (req, res) => {
   try {
-    const userId = req.params.id;
-    const user = await User.findById(userId);
-    if (!user)
-      res.status(404).json({
+    const { reservationId } = req.params; // Fix: use reservationId, not userId
+
+    const reservation = await TableReserve.findById(reservationId);
+    if (!reservation) {
+      return res.status(404).json({
         success: false,
-        msg: "User id not found or user does not exist",
+        msg: "Reservation not found",
       });
-    const update = await TableReserve.findByIdAndUpdate(userId, req.body, {
-      new: true,
-    });
+    }
+
+    const updated = await TableReserve.findByIdAndUpdate(reservationId, req.body, { new: true });
+
     res.status(200).json({
       success: true,
       msg: "Table Reservation Successfully Updated",
-      data: update,
+      data: updated,
     });
   } catch (error) {
-    console.log(error.message);
-    res
-      .status(500)
-      .json({ msg: "An Error Ocured While Updating Reservtion Table" });
+    console.error(error.message);
+    res.status(500).json({
+      msg: "An Error Occurred While Updating Reservation Table",
+    });
   }
 };
 
