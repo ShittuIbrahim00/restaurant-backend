@@ -15,10 +15,14 @@ import LocationRouter from "./routes/locationRoutes.js";
 import tableRouter from './routes/tableRoute.js'
 import reserveRouter from "./routes/reservetableRoute.js"
 import categoryRoute from './routes/TableCategoryRoute.js'
+import stripeRouter from "./routes/webhookRoutes.js";
 dotenv.config();
 connectDB();
 
 const app = express();
+
+app.use("/api/v1/webhook", stripeRouter); 
+
 app.use(express.json());
 app.use(cookieParser());
 
