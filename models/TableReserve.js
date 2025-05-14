@@ -9,6 +9,7 @@ const ReserveTable = new mongoose.Schema({
   isReserved: { type: Boolean, default: false },
   isPaid: { type: Boolean, default: false }, // ✅ Added
   paymentReference: { type: String },         // ✅ Added
+  reservedAt: { type: Date, default: null },
   date_created: { type: Date, default: Date.now, required: true },
   updated_at: { type: Date, default: Date.now, required: true }
 });

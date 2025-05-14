@@ -1,7 +1,7 @@
 import express from "express";
 import stripe from "../config/stripe.js";
 import TableReserve from "../models/TableReserve.js";
-import createTableSchema from "../models/CreateTable.js"; // Import your Table model
+import createTableSchema from "../models/CreateTable.js"; // Ensure correct import
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -25,7 +25,7 @@ webhookRouter.post(
       return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
-    // ✅ On successful payment
+    // Handle successful payment intent
     if (event.type === "payment_intent.succeeded") {
       const paymentIntent = event.data.object;
       const reservationId = paymentIntent.metadata.reservationId;
@@ -35,13 +35,14 @@ webhookRouter.post(
         if (reservation) {
           reservation.isPaid = true;
           reservation.isReserved = true;
+          reservation.reservedAt = new Date();
           reservation.paymentReference = paymentIntent.id;
           await reservation.save();
 
-          // ✅ Update table to isReserved = true
           const table = await createTableSchema.findById(reservation.table);
           if (table) {
             table.isReserved = true;
+            table.reservedAt = new Date();
             await table.save();
           }
 

@@ -8,6 +8,8 @@ const createTable = new schema({
   capacity: { required: true, type: String },
   price: { required: true, type: String },
   user: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
+  isReserved: { type: Boolean, default: false },
+  reservedAt: { type: Date, default: null },
   date_created: {type: Date, default: Date.now(), required: true},
   updated_at: {type:Date, default: Date.now(), required: true}
 });

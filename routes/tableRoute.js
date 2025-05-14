@@ -1,10 +1,10 @@
 import express from "express";
 const tableRouter = express.Router()
-import { createTable, deleteTable, updateTable, getTableByCategory, getSingleTable, getAllTablesWithReservationInfo } from "../controllers/Table.js";
+import { createTable, getAllTable, deleteTable, updateTable, getTableByCategory, getSingleTable } from "../controllers/Table.js";
 import { authorizeRoles, protect } from "../middlewares/authMiddleware.js";
 
 tableRouter.post('/create-table', protect, authorizeRoles("admin", "restaurant-owner"), createTable)
-tableRouter.get('/get-all-table', getAllTablesWithReservationInfo)
+tableRouter.get('/get-all-table', getAllTable)
 tableRouter.delete('/delete-table/:id',protect, authorizeRoles("admin", "restaurant-owner"), deleteTable)
 tableRouter.put('/update-table/:id', protect, authorizeRoles("admin", "restaurant-owner"), updateTable)
 tableRouter.get('/get-table-category/:id', getTableByCategory)
