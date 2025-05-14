@@ -7,6 +7,7 @@ import {
   getSingleReserveTable,
   getAllReserveTable,
   cancelReserveTable,
+  getAllTablesWithReservationInfo,
 } from "../controllers/ReserveTable.js";
 import { protect, authorizeRoles } from '../middlewares/authMiddleware.js';
 
@@ -16,6 +17,7 @@ reserveRouter.put('/update-reserve-table/:reservationId', protect, updateReserve
 reserveRouter.delete('/delete-reserve-table/:id', protect, authorizeRoles('restaurant-owner', 'admin'), deleteReserveTable);
 reserveRouter.delete('/cancel-reservation/:reservationId', cancelReserveTable);
 reserveRouter.get('/get-single-resevertable/:reservationId', getSingleReserveTable);
+reserveRouter.get('/reservedtablewithinfomation', getAllTablesWithReservationInfo);
 
 
 // reserveRouter.post('/create-reserve-table/:_id', createReserveTable)

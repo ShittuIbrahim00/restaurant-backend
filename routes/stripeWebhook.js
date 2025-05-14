@@ -1,12 +1,12 @@
 import express from "express";
 import stripe from "../config/stripe.js";
 import TableReserve from "../models/TableReserve.js";
+import createTableSchema from "../models/CreateTable.js"; // Import your Table model
 import dotenv from "dotenv";
 
 dotenv.config();
 const webhookRouter = express.Router();
 
-// ✅ Fix: use root path since it's mounted at `/api/v1/webhook/stripe`
 webhookRouter.post(
   "/",
   express.raw({ type: "application/json" }),
@@ -25,17 +25,30 @@ webhookRouter.post(
       return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
-    // ✅ Handle successful payment
+    // ✅ On successful payment
     if (event.type === "payment_intent.succeeded") {
       const paymentIntent = event.data.object;
       const reservationId = paymentIntent.metadata.reservationId;
 
-      const reservation = await TableReserve.findById(reservationId);
-      if (reservation) {
-        reservation.isPaid = true;
-        reservation.paymentReference = paymentIntent.id;
-        await reservation.save();
-        console.log("✅ Payment succeeded and reservation updated.");
+      try {
+        const reservation = await TableReserve.findById(reservationId);
+        if (reservation) {
+          reservation.isPaid = true;
+          reservation.isReserved = true;
+          reservation.paymentReference = paymentIntent.id;
+          await reservation.save();
+
+          // ✅ Update table to isReserved = true
+          const table = await createTableSchema.findById(reservation.table);
+          if (table) {
+            table.isReserved = true;
+            await table.save();
+          }
+
+          console.log("✅ Reservation and table updated after payment.");
+        }
+      } catch (error) {
+        console.error("❌ Error updating reservation or table:", error.message);
       }
     }
 

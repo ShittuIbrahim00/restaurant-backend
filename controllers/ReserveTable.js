@@ -1,7 +1,8 @@
-import User from "../models/userModel.js";
+import Table from "../models/CreateTable.js";
 import TableReserve from "../models/TableReserve.js";
 import createTableSchema from "../models/CreateTable.js";
 import UserSchema from "../models/userModel.js";
+
 
 export const createReserveTable = async (req, res) => {
   try {
@@ -16,7 +17,7 @@ export const createReserveTable = async (req, res) => {
       return res.status(404).json({ success: false, msg: "User not found" });
     }
 
-    const tableId = req.params._id; // ✅ FIXED
+    const tableId = req.params._id;
     if (!tableId) {
       return res.status(400).json({ success: false, msg: "Table ID is required" });
     }
@@ -51,9 +52,11 @@ export const createReserveTable = async (req, res) => {
       });
     }
 
+    // Update table to reserved
     table.isReserved = true;
     await table.save();
 
+    // Create reservation and save
     const reservation = new TableReserve({
       table: table._id,
       user: userId,
@@ -208,6 +211,55 @@ export const deleteReserveTable = async (req, res) => {
     console.log(error.message);
     res.status(500).json({
       msg: "An Error Occurred While Deleting Reserve Table",
+    });
+  }
+};
+
+export const getAllTablesWithReservationInfo = async (req, res) => {
+  try {
+    // Step 1: Get all tables
+    const tables = await Table.find().lean();
+
+    // Step 2: Get active reservations (you can filter by date if needed)
+    const reservations = await TableReserve.find({
+      isReserved: true,
+    })
+      .populate("user", "name email")
+      .populate("table", "_id")
+      .lean();
+
+    // Step 3: Build a map of tableId to reservation info
+    const reservationMap = {};
+    reservations.forEach((res) => {
+      const expiresAt = new Date(new Date(res.reservation_Date).getTime() + 60 * 60 * 1000); // 1 hour later
+      reservationMap[res.table._id.toString()] = {
+        reservedBy: res.user,
+        reservation_Time: res.reservation_Time,
+        reservation_Date: res.reservation_Date,
+        expiresAt,
+      };
+    });
+
+    // Step 4: Attach reservation info to each table
+    const enrichedTables = tables.map((table) => {
+      const reservationInfo = reservationMap[table._id.toString()];
+      return {
+        ...table,
+        isBooked: table.isReserved,
+        reservationInfo: reservationInfo || null,
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      msg: "Fetched tables with reservation info",
+      data: enrichedTables,
+    });
+  } catch (error) {
+    console.error("Error fetching tables:", error.message);
+    res.status(500).json({
+      success: false,
+      msg: "Failed to fetch tables with reservation info",
     });
   }
 };
