@@ -143,3 +143,38 @@ export const getTableByCategory = async (req, res) => {
       .json({ msg: "An error occurred while retrieving tables by category." });
   }
 };
+
+
+export const getSingleTable = async (req, res) => {
+  try {
+    const { tableId } = req.params;
+
+    // Validate tableId
+    if (!tableId) {
+      return res.status(400).json({ success: false, msg: 'Table ID is required' });
+    }
+
+    // Find the table by ID
+    const findTable = await createTableSchema.findById(tableId);
+
+    // If table not found
+    if (!findTable) {
+      return res.status(404).json({ success: false, msg: 'Table not found or does not exist' });
+    }
+
+    // Success response
+    res.status(200).json({
+      success: true,
+      msg: 'Table retrieved successfully',
+      data: findTable
+    });
+
+  } catch (error) {
+    console.error("Error fetching table:", error.message);
+    res.status(500).json({
+      success: false,
+      msg: "An error occurred while retrieving table.",
+      error: error.message // Provide error message for debugging
+    });
+  }
+};
