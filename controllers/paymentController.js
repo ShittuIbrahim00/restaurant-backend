@@ -1,3 +1,4 @@
+import Stripe from "stripe";
 import createTableSchema from "../models/CreateTable";
 import UserSchema from "../models/userModel";
 
@@ -39,7 +40,7 @@ export const createTableReservationWithOptionalPayment = async (req, res) => {
   
       // FREE BOOKING
       if (table.price === 0) {
-        const reservation = new TableReserve({
+        const reservation = new ({
           user: userId,
           table: tableId,
           reservation_Date,
@@ -59,7 +60,7 @@ export const createTableReservationWithOptionalPayment = async (req, res) => {
       }
   
       // PAID BOOKING — Proceed to Stripe
-      const session = await stripe.checkout.sessions.create({
+      const session = await Stripe.checkout.sessions.create({
         payment_method_types: ["card"],
         mode: "payment",
         line_items: [
