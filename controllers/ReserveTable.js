@@ -39,6 +39,7 @@ export const createReserveTable = async (req, res) => {
       });
     }
 
+    // Check for an existing *paid* reservation for same table/date/time
     const conflictingReservation = await TableReserve.findOne({
       table: table._id,
       reservation_Date,
@@ -52,24 +53,22 @@ export const createReserveTable = async (req, res) => {
       });
     }
 
-    // Update table to reserved
-    table.isReserved = true;
-    await table.save();
-
-    // Create reservation and save
+    // Create a reservation (not marked as reserved yet)
     const reservation = new TableReserve({
       table: table._id,
       user: userId,
       reservation_Date,
       reservation_Time,
       qty_persons: quantity,
+      isReserved: false,
+      isPaid: false,
     });
 
     const savedReservation = await reservation.save();
 
     res.status(201).json({
       success: true,
-      msg: "Table reserved successfully",
+      msg: "Reservation created. Awaiting payment...",
       data: savedReservation,
     });
   } catch (error) {
