@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import { connectDB } from "./config/db.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import "./utils/releaseTable.js";
 import userRouter from "./routes/userRoutes.js";
 import categoryRouter from "./routes/categoryRoutes.js";
 import menuRouter from "./routes/menuRoutes.js";
@@ -15,10 +16,16 @@ import LocationRouter from "./routes/locationRoutes.js";
 import tableRouter from './routes/tableRoute.js'
 import reserveRouter from "./routes/reservetableRoute.js"
 import categoryRoute from './routes/TableCategoryRoute.js'
+import webhookRouter from "./routes/stripeWebhook.js";
+import paymentRouter from "./routes/paymentRoute.js";
+
 dotenv.config();
 connectDB();
 
 const app = express();
+
+app.use("/api/v1/webhook/stripe", webhookRouter); 
+
 app.use(express.json());
 app.use(cookieParser());
 
@@ -55,6 +62,7 @@ app.use("/api/v1", menuRouter);
 app.use("/api/v1", orderRouter);
 app.use("/api/v1", restaurantRouter);
 app.use("/api/v1", LocationRouter);
+app.use("/api/v1", paymentRouter);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

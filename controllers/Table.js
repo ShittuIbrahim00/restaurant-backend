@@ -1,6 +1,7 @@
 import createTableSchema from "../models/CreateTable.js";
 import TableCat from "../models/TableCategory.js";
 import TableReserve from "../models/TableReserve.js";
+
 export const createTable = async (req, res) => {
   try {
     const { capacity, price, tableNumber, categoryId } = req.body;

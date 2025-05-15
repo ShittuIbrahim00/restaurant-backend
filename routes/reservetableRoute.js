@@ -1,14 +1,24 @@
 import express from "express";
-const reserveRouter = express.Router()
-import { createReserveTable, deleteReserveTable, updateReserveTable, getSingleReserveTable, getAllReserveTable, cancelReserveTable } from "../controllers/ReserveTable.js";
-import {protect, authorizeRoles} from '../middlewares/authMiddleware.js'
+const reserveRouter = express.Router();
+import {
+  createReserveTable,
+  deleteReserveTable,
+  updateReserveTable,
+  getSingleReserveTable,
+  getAllReserveTable,
+  cancelReserveTable,
+  getAllTablesWithReservationInfo,
+} from "../controllers/ReserveTable.js";
+import { protect, authorizeRoles } from '../middlewares/authMiddleware.js';
 
-reserveRouter.post('/create-reserve-table/:_id', createReserveTable)
-reserveRouter.get('/getAll-reserve-table', protect, authorizeRoles('restaurant-owner', 'admin'), getAllReserveTable)
-reserveRouter.put('/update-reserve-table/:id', protect, updateReserveTable) 
-reserveRouter.delete('/delete-reserve-table/:id', protect, authorizeRoles('resraurant-owner', 'admin'), deleteReserveTable)
-reserveRouter.delete('/cancel-reservation/:reservationId', cancelReserveTable)
-reserveRouter.get('/get-single-resevertable/:reservationId', getSingleReserveTable)
+reserveRouter.post('/create-reserve-table/:_id', createReserveTable);
+reserveRouter.get('/getAll-reserve-table', protect, authorizeRoles('restaurant-owner', 'admin'), getAllReserveTable);
+reserveRouter.put('/update-reserve-table/:reservationId', protect, updateReserveTable);
+reserveRouter.delete('/delete-reserve-table/:id', protect, authorizeRoles('restaurant-owner', 'admin'), deleteReserveTable);
+reserveRouter.delete('/cancel-reservation/:reservationId', cancelReserveTable);
+reserveRouter.get('/get-single-resevertable/:reservationId', getSingleReserveTable);
+reserveRouter.get('/reservedtablewithinfomation', getAllTablesWithReservationInfo);
+
 
 // reserveRouter.post('/create-reserve-table/:_id', createReserveTable)
 // reserveRouter.get('/getAll-reserve-table',getAllReserveTable)

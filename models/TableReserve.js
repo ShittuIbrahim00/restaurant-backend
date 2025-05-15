@@ -7,10 +7,12 @@ const ReserveTable = new mongoose.Schema({
   reservation_Time: { type: String, required: true },
   qty_persons: { type: Number, required: true, min: 1 },
   isReserved: { type: Boolean, default: false },
-  date_created: { type: Date, default: Date.now(), required: true },
-  updated_at: { type: Date, default: Date.now(), required: true }
+  isPaid: { type: Boolean, default: false }, // ✅ Added
+  paymentReference: { type: String },         // ✅ Added
+  reservedAt: { type: Date, default: null },
+  date_created: { type: Date, default: Date.now, required: true },
+  updated_at: { type: Date, default: Date.now, required: true }
 });
 
 const ReserveTableSchema = mongoose.model('ReserveTable', ReserveTable);
-
 export default ReserveTableSchema;
