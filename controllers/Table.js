@@ -98,14 +98,6 @@ export const deleteTable = async (req, res) => {
       });
     }
 
-    const reservations = await TableReserve.find({ table: id });
-    if (reservations.length > 0) {
-      return res.status(400).json({
-        success: false,
-        msg: "Cannot delete table, it has active reservations.",
-      });
-    }
-
     // Step 3: Delete the table
     await createTableSchema.findByIdAndDelete(id);
 
