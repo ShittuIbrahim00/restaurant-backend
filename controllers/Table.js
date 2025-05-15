@@ -1,7 +1,6 @@
 import createTableSchema from "../models/CreateTable.js";
 import TableCat from "../models/TableCategory.js";
 import TableReserve from "../models/TableReserve.js";
-
 export const createTable = async (req, res) => {
   try {
     const { capacity, price, tableNumber, categoryId } = req.body;
@@ -48,8 +47,6 @@ export const updateTable = async (req, res) => {
     const id = req.params.id;
     const tableId = await createTableSchema.findById(id);
 
-   
- 
     if (!tableId)
       res.status(404).json({
         success: false,
@@ -96,6 +93,14 @@ export const deleteTable = async (req, res) => {
       return res.status(404).json({
         success: false,
         msg: "Table ID not found",
+      });
+    }
+
+    const reservations = await TableReserve.find({ table: id });
+    if (reservations.length > 0) {
+      return res.status(400).json({
+        success: false,
+        msg: "Cannot delete table, it has active reservations.",
       });
     }
 
