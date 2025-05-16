@@ -23,21 +23,6 @@ dotenv.config();
 connectDB();
 
 const app = express();
-
-app.use("/api/v1/flutterwave", flutterwaveRouter);
-app.use(
-  "/api/v1/webhook/stripe",
-  express.raw({ type: "application/json" }),
-  (req, res, next) => {
-    req.rawBody = req.body;
-    next();
-  }
-);
-app.post("/api/v1/webhook/stripe", stripeWebhook); 
-
-app.use(express.json());
-app.use(cookieParser());
-
 const allowedOrigins = process.env.CLIENT_URLS?.split(",") || [
   "http://localhost:5173",
   "http://localhost:5174",
@@ -58,6 +43,19 @@ const corsOptions = {
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
 };
 
+app.use("/api/v1/flutterwave", flutterwaveRouter);
+app.use(
+  "/api/v1/webhook/stripe",
+  express.raw({ type: "application/json" }),
+  (req, res, next) => {
+    req.rawBody = req.body;
+    next();
+  }
+);
+app.post("/api/v1/webhook/stripe", stripeWebhook); 
+
+app.use(express.json());
+app.use(cookieParser());
 app.use(cors(corsOptions));
 
 // Routes
