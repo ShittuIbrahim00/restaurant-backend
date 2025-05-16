@@ -3,7 +3,6 @@ import TableReserve from "../models/TableReserve.js";
 import createTableSchema from "../models/CreateTable.js";
 import UserSchema from "../models/userModel.js";
 
-
 export const createReserveTable = async (req, res) => {
   try {
     const { reservation_Date, reservation_Time, qty_persons, userId } = req.body;
@@ -39,11 +38,12 @@ export const createReserveTable = async (req, res) => {
       });
     }
 
-    // Check for an existing *paid* reservation for same table/date/time
+    // ✅ Check only for paid (confirmed) reservations at same date/time
     const conflictingReservation = await TableReserve.findOne({
       table: table._id,
       reservation_Date,
       reservation_Time,
+      isReserved: true,  // Only consider confirmed (paid) reservations
     });
 
     if (conflictingReservation) {
@@ -53,7 +53,7 @@ export const createReserveTable = async (req, res) => {
       });
     }
 
-    // Create a reservation (not marked as reserved yet)
+    // ✅ Create the reservation (NOT reserved or paid yet)
     const reservation = new TableReserve({
       table: table._id,
       user: userId,
@@ -73,11 +73,12 @@ export const createReserveTable = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, msg: "An error occurred while reserving the table" });
+    res.status(500).json({
+      success: false,
+      msg: "An error occurred while creating the reservation",
+    });
   }
 };
-
-
 
 export const cancelReserveTable = async (req, res) => {
   try {
