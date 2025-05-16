@@ -1,6 +1,7 @@
 import Table from "../models/CreateTable.js";
-import TableReserve from "../models/TableReserve.js";
+// import TableReserve from "../models/TableReserve.js";
 import createTableSchema from "../models/CreateTable.js";
+import ReserveTableSchema from "../models/TableReserve.js";
 import UserSchema from "../models/userModel.js";
 
 export const createReserveTable = async (req, res) => {
@@ -39,7 +40,7 @@ export const createReserveTable = async (req, res) => {
     }
 
     // ✅ Check only for paid (confirmed) reservations at same date/time
-    const conflictingReservation = await TableReserve.findOne({
+    const conflictingReservation = await ReserveTableSchema.findOne({
       table: table._id,
       reservation_Date,
       reservation_Time,
@@ -54,7 +55,7 @@ export const createReserveTable = async (req, res) => {
     }
 
     // ✅ Create the reservation (NOT reserved or paid yet)
-    const reservation = new TableReserve({
+    const reservation = new ReserveTableSchema({
       table: table._id,
       user: userId,
       reservation_Date,
@@ -85,7 +86,7 @@ export const cancelReserveTable = async (req, res) => {
     const { reservationId } = req.params;
 
     // Find the reservation
-    const reservation = await TableReserve.findById(reservationId);
+    const reservation = await ReserveTableSchema.findById(reservationId);
     if (!reservation) {
       return res
         .status(404)
@@ -103,7 +104,7 @@ export const cancelReserveTable = async (req, res) => {
     await table.save();
 
     // Delete the reservation
-    await TableReserve.findByIdAndDelete(reservationId);
+    await ReserveTableSchema.findByIdAndDelete(reservationId);
 
     res
       .status(200)
@@ -125,7 +126,7 @@ export const getSingleReserveTable = async (req, res) => {
         .status(404)
         .json({ success: false, msg: "Reservation id required" });
     }
-    const findReserveTableByID = await TableReserve.findById(reservationId).populate('user', {__v: 0, password: 0}).populate('table', {__v:0})
+    const findReserveTableByID = await ReserveTableSchema.findById(reservationId).populate('user', {__v: 0, password: 0}).populate('table', {__v:0})
     if (!findReserveTableByID) {
       return res
         .status(404)
@@ -148,7 +149,7 @@ export const updateReserveTable = async (req, res) => {
   try {
     const { reservationId } = req.params; // Fix: use reservationId, not userId
 
-    const reservation = await TableReserve.findById(reservationId);
+    const reservation = await ReserveTableSchema.findById(reservationId);
     if (!reservation) {
       return res.status(404).json({
         success: false,
@@ -156,7 +157,7 @@ export const updateReserveTable = async (req, res) => {
       });
     }
 
-    const updated = await TableReserve.findByIdAndUpdate(reservationId, req.body, { new: true });
+    const updated = await ReserveTableSchema.findByIdAndUpdate(reservationId, req.body, { new: true });
 
     res.status(200).json({
       success: true,
@@ -173,7 +174,7 @@ export const updateReserveTable = async (req, res) => {
 
 export const getAllReserveTable = async (req, res) => {
   try {
-    const resp = await TableReserve.find()
+    const resp = await ReserveTableSchema.find()
       .populate("table")
       .populate("user", { password: 0, __v: 0 });
 
@@ -193,7 +194,7 @@ export const getAllReserveTable = async (req, res) => {
 export const deleteReserveTable = async (req, res) => {
   try {
     const id = req.params.id; // Assuming your route is defined as '/path/:id'
-    const find = await TableReserve.findById(id);
+    const find = await ReserveTableSchema.findById(id);
     if (!find) {
       return res.status(404).json({
         success: false,
@@ -201,7 +202,7 @@ export const deleteReserveTable = async (req, res) => {
       });
     }
 
-    const deletedTable = await TableReserve.findByIdAndDelete(id);
+    const deletedTable = await ReserveTableSchema.findByIdAndDelete(id);
     res.status(200).json({
       success: true,
       msg: "Successfully deleted reserve table",
@@ -221,7 +222,7 @@ export const getAllTablesWithReservationInfo = async (req, res) => {
     const tables = await Table.find().lean();
 
     // Step 2: Get active reservations (you can filter by date if needed)
-    const reservations = await TableReserve.find({
+    const reservations = await ReserveTableSchema.find({
       isReserved: true,
     })
       .populate("user", "name email")

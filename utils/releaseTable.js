@@ -1,26 +1,32 @@
 import cron from "node-cron";
 import createTableSchema from "../models/CreateTable.js";
-// import CreateTable from "../models/CreateTable.js";
+import ReserveTableSchema from "../models/TableReserve.js";
 
-// Run every 10 minutes (you can adjust the interval)
+// Every 10 minutes
 cron.schedule("*/10 * * * *", async () => {
   try {
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
 
-    const released = await createTableSchema.updateMany(
-      {
-        isReserved: true,
-        reservedAt: { $lte: oneHourAgo },
-      },
-      {
-        $set: { isReserved: false, reservedAt: null },
-      }
+    const expiredReservations = await ReserveTableSchema.find({
+      isReserved: true,
+      isPaid: false,
+      reservedAt: { $lte: oneHourAgo },
+    });
+
+    const tableIdsToRelease = expiredReservations.map(res => res.table);
+
+    await createTableSchema.updateMany(
+      { _id: { $in: tableIdsToRelease } },
+      { $set: { isReserved: false } }
     );
 
-    if (released.modifiedCount > 0) {
-      console.log(`${released.modifiedCount} tables released`);
-    }
-  } catch (err) {
-    console.error("Error releasing tables:", err);
+    await ReserveTableSchema.updateMany(
+      { _id: { $in: expiredReservations.map(res => res._id) } },
+      { $set: { isReserved: false } }
+    );
+
+    console.log("Expired reservations cleared:", expiredReservations.length);
+  } catch (error) {
+    console.error("Error releasing tables:", error.message);
   }
 });

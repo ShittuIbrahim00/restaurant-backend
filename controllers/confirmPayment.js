@@ -1,6 +1,6 @@
 import stripe from "../config/stripe.js";
-import TableReserve from "../models/TableReserve.js";
 import createTableSchema from "../models/CreateTable.js";
+import ReserveTableSchema from "../models/TableReserve.js";
 
 export const confirmPayment = async (req, res) => {
   try {
@@ -21,7 +21,7 @@ export const confirmPayment = async (req, res) => {
     }
 
     // Find reservation
-    const reservation = await TableReserve.findById(reservationId);
+    const reservation = await ReserveTableSchema.findById(reservationId);
     if (!reservation) {
       return res.status(404).json({ success: false, msg: "Reservation not found" });
     }

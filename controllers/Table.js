@@ -1,6 +1,6 @@
 import createTableSchema from "../models/CreateTable.js";
 import TableCat from "../models/TableCategory.js";
-import TableReserve from "../models/TableReserve.js";
+import ReserveTableSchema from "../models/TableReserve.js";
 
 export const createTable = async (req, res) => {
   try {
@@ -99,7 +99,7 @@ export const deleteTable = async (req, res) => {
       });
     }
 
-    const reservations = await TableReserve.find({ table: id });
+    const reservations = await ReserveTableSchema.find({ table: id });
     if (reservations.length > 0) {
       return res.status(400).json({
         success: false,
@@ -130,7 +130,7 @@ export const getTableByCategory = async (req, res) => {
     const { id } = req.params; // id = categoryId
 
     // Find tables with matching category
-    const tables = await createTableSchema.find({ table_category: id });
+    const tables = await createTableSchema.find({ categoryId: id });
 
     res.status(200).json({
       success: true,

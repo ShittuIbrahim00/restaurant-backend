@@ -16,17 +16,18 @@ import LocationRouter from "./routes/locationRoutes.js";
 import tableRouter from './routes/tableRoute.js'
 import reserveRouter from "./routes/reservetableRoute.js"
 import categoryRoute from './routes/TableCategoryRoute.js'
-import webhookRouter from "./routes/stripeWebhook.js";
 import paymentRouter from "./routes/paymentRoute.js";
+import { stripeWebhook } from "./routes/stripeWebhook.js";
 
 dotenv.config();
 connectDB();
 
 const app = express();
 
-app.use("/api/v1/webhook/stripe", webhookRouter); 
+// Stripe webhook route (must come before express.json())
+app.post("/api/v1/webhook/stripe", express.raw({ type: "application/json" }), stripeWebhook);
 
-app.use(express.json());
+app.use(express.json()); // placed after raw body parser
 app.use(cookieParser());
 
 const allowedOrigins = process.env.CLIENT_URLS?.split(",") || [
