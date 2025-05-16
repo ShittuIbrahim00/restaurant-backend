@@ -12,26 +12,35 @@ import InventoryRouter from "./routes/inventoryRoutes.js";
 import StockRouter from "./routes/stockRoutes.js";
 import restaurantRouter from "./routes/restaurantRoutes.js";
 import LocationRouter from "./routes/locationRoutes.js";
-
-import tableRouter from './routes/tableRoute.js'
-import reserveRouter from "./routes/reservetableRoute.js"
-import categoryRoute from './routes/TableCategoryRoute.js'
+import tableRouter from './routes/tableRoute.js';
+import reserveRouter from "./routes/reservetableRoute.js";
+import categoryRoute from './routes/TableCategoryRoute.js';
 import paymentRouter from "./routes/paymentRoute.js";
-import { stripeWebhook } from "./routes/stripeWebhook.js";
+import { stripeWebhook } from "./routes/stripeWebhook.js"; 
+import flutterwaveRouter from "./flutter/flutterwaveRoute.js";
 
 dotenv.config();
 connectDB();
 
 const app = express();
 
-// Stripe webhook route (must come before express.json())
-app.post("/api/v1/webhook/stripe", express.raw({ type: "application/json" }), stripeWebhook);
+app.use("/api/v1/flutterwave", flutterwaveRouter);
+app.use(
+  "/api/v1/webhook/stripe",
+  express.raw({ type: "application/json" }),
+  (req, res, next) => {
+    req.rawBody = req.body;
+    next();
+  }
+);
+app.post("/api/v1/webhook/stripe", stripeWebhook); 
 
-app.use(express.json()); // placed after raw body parser
+app.use(express.json());
 app.use(cookieParser());
 
 const allowedOrigins = process.env.CLIENT_URLS?.split(",") || [
   "http://localhost:5173",
+  "http://localhost:5174",
   "http://localhost:5175",
   "https://restaurant-dashboard-three.vercel.app",
   "https://restaurant-project-ivory.vercel.app"
@@ -55,9 +64,9 @@ app.use(cors(corsOptions));
 app.use("/api/v1", userRouter);
 app.use("/api/v1", InventoryRouter);
 app.use("/api/v1", StockRouter);
-app.use('/api/v1', tableRouter)
-app.use("/api/v1", reserveRouter)
-app.use("/api/v1", categoryRoute)
+app.use("/api/v1", tableRouter);
+app.use("/api/v1", reserveRouter);
+app.use("/api/v1", categoryRoute);
 app.use("/api/v1", categoryRouter);
 app.use("/api/v1", menuRouter);
 app.use("/api/v1", orderRouter);
