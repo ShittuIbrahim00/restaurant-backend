@@ -48,8 +48,6 @@ export const updateTable = async (req, res) => {
     const id = req.params.id;
     const tableId = await createTableSchema.findById(id);
 
-   
- 
     if (!tableId)
       res.status(404).json({
         success: false,

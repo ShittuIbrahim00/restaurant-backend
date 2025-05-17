@@ -1,9 +1,12 @@
 import express from "express";
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 import { connectDB } from "./config/db.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+
 import "./utils/releaseTable.js";
+
+// Routes
 import userRouter from "./routes/userRoutes.js";
 import categoryRouter from "./routes/categoryRoutes.js";
 import menuRouter from "./routes/menuRoutes.js";
@@ -16,13 +19,13 @@ import tableRouter from './routes/tableRoute.js';
 import reserveRouter from "./routes/reservetableRoute.js";
 import categoryRoute from './routes/TableCategoryRoute.js';
 import paymentRouter from "./routes/paymentRoute.js";
-import { stripeWebhook } from "./routes/stripeWebhook.js"; 
 import flutterwaveRouter from "./flutter/flutterwaveRoute.js";
 
 dotenv.config();
 connectDB();
 
 const app = express();
+
 const allowedOrigins = process.env.CLIENT_URLS?.split(",") || [
   "http://localhost:5173",
   "http://localhost:5174",
@@ -31,6 +34,7 @@ const allowedOrigins = process.env.CLIENT_URLS?.split(",") || [
   "https://restaurant-project-ivory.vercel.app"
 ];
 
+// ✅ Apply CORS before any routes
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -40,25 +44,19 @@ const corsOptions = {
     }
   },
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
 };
-
-app.use("/api/v1/flutterwave", flutterwaveRouter);
-app.use(
-  "/api/v1/webhook/stripe",
-  express.raw({ type: "application/json" }),
-  (req, res, next) => {
-    req.rawBody = req.body;
-    next();
-  }
-);
-app.post("/api/v1/webhook/stripe", stripeWebhook); 
-
-app.use(express.json());
-app.use(cookieParser());
 app.use(cors(corsOptions));
 
-// Routes
+// ✅ Middleware
+app.use(cookieParser());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// ✅ Flutterwave routes
+app.use("/api/v1/flutterwave", flutterwaveRouter);
+
+// ✅ All other JSON routes
 app.use("/api/v1", userRouter);
 app.use("/api/v1", InventoryRouter);
 app.use("/api/v1", StockRouter);
@@ -74,5 +72,5 @@ app.use("/api/v1", paymentRouter);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`✅ Server is running on port ${PORT}`);
 });

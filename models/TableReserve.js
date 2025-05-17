@@ -5,6 +5,7 @@ const ReserveTable = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   reservation_Date: { type: Date, required: true },
   reservation_Time: { type: String, required: true },
+  tx_ref: { type: String },
   qty_persons: { type: Number, required: true, min: 1 },
   isReserved: { type: Boolean, default: false },
   isPaid: { type: Boolean, default: false }, // ✅ Added
