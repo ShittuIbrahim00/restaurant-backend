@@ -40,7 +40,7 @@ export const initiateFlutterwavePayment = async (req, res) => {
         tx_ref: txRef,
         amount,
         currency: "NGN",
-        redirect_url: `${process.env.CLIENT_URL}/payment-status?tx_ref=${txRef}`,
+        redirect_url: `https://restaurant-project-ivory.vercel.app/payment-status?tx_ref=${txRef}`,
         customer: { email },
         customizations: {
           title: "Table Reservation",
