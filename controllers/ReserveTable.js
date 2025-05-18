@@ -6,10 +6,13 @@ import UserSchema from "../models/userModel.js";
 
 export const createReserveTable = async (req, res) => {
   try {
-    const { reservation_Date, reservation_Time, qty_persons, userId } = req.body;
+    const { reservation_Date, reservation_Time, qty_persons, userId } =
+      req.body;
 
     if (!userId) {
-      return res.status(400).json({ success: false, msg: "User ID is required" });
+      return res
+        .status(400)
+        .json({ success: false, msg: "User ID is required" });
     }
 
     const findUser = await UserSchema.findById(userId);
@@ -19,7 +22,9 @@ export const createReserveTable = async (req, res) => {
 
     const tableId = req.params._id;
     if (!tableId) {
-      return res.status(400).json({ success: false, msg: "Table ID is required" });
+      return res
+        .status(400)
+        .json({ success: false, msg: "Table ID is required" });
     }
 
     const table = await createTableSchema.findById(tableId);
@@ -29,7 +34,9 @@ export const createReserveTable = async (req, res) => {
 
     const quantity = parseInt(qty_persons, 10);
     if (isNaN(quantity) || quantity <= 0) {
-      return res.status(400).json({ success: false, msg: "Invalid number of persons" });
+      return res
+        .status(400)
+        .json({ success: false, msg: "Invalid number of persons" });
     }
 
     if (quantity > table.capacity) {
@@ -44,7 +51,7 @@ export const createReserveTable = async (req, res) => {
       table: table._id,
       reservation_Date,
       reservation_Time,
-      isReserved: true,  // Only consider confirmed (paid) reservations
+      isReserved: true, // Only consider confirmed (paid) reservations
     });
 
     if (conflictingReservation) {
@@ -55,14 +62,18 @@ export const createReserveTable = async (req, res) => {
     }
 
     // ✅ Create the reservation (NOT reserved or paid yet)
+    const tx_ref = `tx-${Date.now()}`;
+
     const reservation = new ReserveTableSchema({
       table: table._id,
       user: userId,
       reservation_Date,
       reservation_Time,
       qty_persons: quantity,
+      tx_ref,
       isReserved: false,
       isPaid: false,
+      reservedAt: new Date(), // for cron cleanup
     });
 
     const savedReservation = await reservation.save();
@@ -71,6 +82,7 @@ export const createReserveTable = async (req, res) => {
       success: true,
       msg: "Reservation created. Awaiting payment...",
       data: savedReservation,
+      tx_ref,
     });
   } catch (error) {
     console.error(error);
@@ -126,7 +138,11 @@ export const getSingleReserveTable = async (req, res) => {
         .status(404)
         .json({ success: false, msg: "Reservation id required" });
     }
-    const findReserveTableByID = await ReserveTableSchema.findById(reservationId).populate('user', {__v: 0, password: 0}).populate('table', {__v:0})
+    const findReserveTableByID = await ReserveTableSchema.findById(
+      reservationId
+    )
+      .populate("user", { __v: 0, password: 0 })
+      .populate("table", { __v: 0 });
     if (!findReserveTableByID) {
       return res
         .status(404)
@@ -157,7 +173,11 @@ export const updateReserveTable = async (req, res) => {
       });
     }
 
-    const updated = await ReserveTableSchema.findByIdAndUpdate(reservationId, req.body, { new: true });
+    const updated = await ReserveTableSchema.findByIdAndUpdate(
+      reservationId,
+      req.body,
+      { new: true }
+    );
 
     res.status(200).json({
       success: true,
@@ -232,7 +252,9 @@ export const getAllTablesWithReservationInfo = async (req, res) => {
     // Step 3: Build a map of tableId to reservation info
     const reservationMap = {};
     reservations.forEach((res) => {
-      const expiresAt = new Date(new Date(res.reservation_Date).getTime() + 60 * 60 * 1000); // 1 hour later
+      const expiresAt = new Date(
+        new Date(res.reservation_Date).getTime() + 60 * 60 * 1000
+      ); // 1 hour later
       reservationMap[res.table._id.toString()] = {
         reservedBy: res.user,
         reservation_Time: res.reservation_Time,

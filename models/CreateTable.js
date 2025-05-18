@@ -10,8 +10,10 @@ const createTable = new schema({
   user: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
   isReserved: { type: Boolean, default: false },
   reservedAt: { type: Date, default: null },
-  date_created: {type: Date, default: Date.now(), required: true},
-  updated_at: {type:Date, default: Date.now(), required: true}
+  tx_ref: { type: String, required: true, unique: true }, // ✅ Prevent reuse
+  paymentReference: { type: String, unique: true, sparse: true }, // ✅ Store Flutterwave transaction ID
+  date_created: {type: Date, default: Date.now, required: true},
+  updated_at: {type:Date, default: Date.now, required: true}
 });
 
 const createTableSchema = mongoose.model("Table", createTable);
