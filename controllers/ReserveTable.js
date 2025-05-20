@@ -1,15 +1,18 @@
 import Table from "../models/CreateTable.js";
-import TableReserve from "../models/TableReserve.js";
+// import TableReserve from "../models/TableReserve.js";
 import createTableSchema from "../models/CreateTable.js";
+import ReserveTableSchema from "../models/TableReserve.js";
 import UserSchema from "../models/userModel.js";
-
 
 export const createReserveTable = async (req, res) => {
   try {
-    const { reservation_Date, reservation_Time, qty_persons, userId } = req.body;
+    const { reservation_Date, reservation_Time, qty_persons, userId } =
+      req.body;
 
     if (!userId) {
-      return res.status(400).json({ success: false, msg: "User ID is required" });
+      return res
+        .status(400)
+        .json({ success: false, msg: "User ID is required" });
     }
 
     const findUser = await UserSchema.findById(userId);
@@ -19,7 +22,9 @@ export const createReserveTable = async (req, res) => {
 
     const tableId = req.params._id;
     if (!tableId) {
-      return res.status(400).json({ success: false, msg: "Table ID is required" });
+      return res
+        .status(400)
+        .json({ success: false, msg: "Table ID is required" });
     }
 
     const table = await createTableSchema.findById(tableId);
@@ -29,7 +34,9 @@ export const createReserveTable = async (req, res) => {
 
     const quantity = parseInt(qty_persons, 10);
     if (isNaN(quantity) || quantity <= 0) {
-      return res.status(400).json({ success: false, msg: "Invalid number of persons" });
+      return res
+        .status(400)
+        .json({ success: false, msg: "Invalid number of persons" });
     }
 
     if (quantity > table.capacity) {
@@ -39,10 +46,12 @@ export const createReserveTable = async (req, res) => {
       });
     }
 
-    const conflictingReservation = await TableReserve.findOne({
+    // ✅ Check only for paid (confirmed) reservations at same date/time
+    const conflictingReservation = await ReserveTableSchema.findOne({
       table: table._id,
       reservation_Date,
       reservation_Time,
+      isReserved: true, // Only consider confirmed (paid) reservations
     });
 
     if (conflictingReservation) {
@@ -53,39 +62,44 @@ export const createReserveTable = async (req, res) => {
     }
 
     // Update table to reserved
-    table.isReserved = false;
+    table.isReserved = true;
     await table.save();
 
-    // Create reservation and save
-    const reservation = new TableReserve({
+    const reservation = new ReserveTableSchema({
       table: table._id,
       user: userId,
       reservation_Date,
       reservation_Time,
       qty_persons: quantity,
+      tx_ref,
+      isReserved: false,
+      isPaid: false,
+      reservedAt: new Date(), // for cron cleanup
     });
 
     const savedReservation = await reservation.save();
 
     res.status(201).json({
       success: true,
-      msg: "Table reserved successfully",
+      msg: "Reservation created. Awaiting payment...",
       data: savedReservation,
+      tx_ref,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, msg: "An error occurred while reserving the table" });
+    res.status(500).json({
+      success: false,
+      msg: "An error occurred while creating the reservation",
+    });
   }
 };
-
-
 
 export const cancelReserveTable = async (req, res) => {
   try {
     const { reservationId } = req.params;
 
     // Find the reservation
-    const reservation = await TableReserve.findById(reservationId);
+    const reservation = await ReserveTableSchema.findById(reservationId);
     if (!reservation) {
       return res
         .status(404)
@@ -103,7 +117,7 @@ export const cancelReserveTable = async (req, res) => {
     await table.save();
 
     // Delete the reservation
-    await TableReserve.findByIdAndDelete(reservationId);
+    await ReserveTableSchema.findByIdAndDelete(reservationId);
 
     res
       .status(200)
@@ -125,7 +139,11 @@ export const getSingleReserveTable = async (req, res) => {
         .status(404)
         .json({ success: false, msg: "Reservation id required" });
     }
-    const findReserveTableByID = await TableReserve.findById(reservationId).populate('user', {__v: 0, password: 0}).populate('table', {__v:0})
+    const findReserveTableByID = await ReserveTableSchema.findById(
+      reservationId
+    )
+      .populate("user", { __v: 0, password: 0 })
+      .populate("table", { __v: 0 });
     if (!findReserveTableByID) {
       return res
         .status(404)
@@ -148,7 +166,7 @@ export const updateReserveTable = async (req, res) => {
   try {
     const { reservationId } = req.params; // Fix: use reservationId, not userId
 
-    const reservation = await TableReserve.findById(reservationId);
+    const reservation = await ReserveTableSchema.findById(reservationId);
     if (!reservation) {
       return res.status(404).json({
         success: false,
@@ -156,7 +174,11 @@ export const updateReserveTable = async (req, res) => {
       });
     }
 
-    const updated = await TableReserve.findByIdAndUpdate(reservationId, req.body, { new: true });
+    const updated = await ReserveTableSchema.findByIdAndUpdate(
+      reservationId,
+      req.body,
+      { new: true }
+    );
 
     res.status(200).json({
       success: true,
@@ -173,7 +195,7 @@ export const updateReserveTable = async (req, res) => {
 
 export const getAllReserveTable = async (req, res) => {
   try {
-    const resp = await TableReserve.find()
+    const resp = await ReserveTableSchema.find()
       .populate("table")
       .populate("user", { password: 0, __v: 0 });
 
@@ -193,7 +215,7 @@ export const getAllReserveTable = async (req, res) => {
 export const deleteReserveTable = async (req, res) => {
   try {
     const id = req.params.id; // Assuming your route is defined as '/path/:id'
-    const find = await TableReserve.findById(id);
+    const find = await ReserveTableSchema.findById(id);
     if (!find) {
       return res.status(404).json({
         success: false,
@@ -201,7 +223,7 @@ export const deleteReserveTable = async (req, res) => {
       });
     }
 
-    const deletedTable = await TableReserve.findByIdAndDelete(id);
+    const deletedTable = await ReserveTableSchema.findByIdAndDelete(id);
     res.status(200).json({
       success: true,
       msg: "Successfully deleted reserve table",
@@ -221,7 +243,7 @@ export const getAllTablesWithReservationInfo = async (req, res) => {
     const tables = await Table.find().lean();
 
     // Step 2: Get active reservations (you can filter by date if needed)
-    const reservations = await TableReserve.find({
+    const reservations = await ReserveTableSchema.find({
       isReserved: true,
     })
       .populate("user", "name email")
@@ -231,7 +253,9 @@ export const getAllTablesWithReservationInfo = async (req, res) => {
     // Step 3: Build a map of tableId to reservation info
     const reservationMap = {};
     reservations.forEach((res) => {
-      const expiresAt = new Date(new Date(res.reservation_Date).getTime() + 60 * 60 * 1000); // 1 hour later
+      const expiresAt = new Date(
+        new Date(res.reservation_Date).getTime() + 60 * 60 * 1000
+      ); // 1 hour later
       reservationMap[res.table._id.toString()] = {
         reservedBy: res.user,
         reservation_Time: res.reservation_Time,

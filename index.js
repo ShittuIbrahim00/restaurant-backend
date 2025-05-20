@@ -1,9 +1,12 @@
 import express from "express";
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 import { connectDB } from "./config/db.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import "./utils/releaseTable.js";
+
+// import "./utils/releaseTable.js";
+
+// Routes
 import userRouter from "./routes/userRoutes.js";
 import categoryRouter from "./routes/categoryRoutes.js";
 import menuRouter from "./routes/menuRoutes.js";
@@ -12,34 +15,31 @@ import InventoryRouter from "./routes/inventoryRoutes.js";
 import StockRouter from "./routes/stockRoutes.js";
 import restaurantRouter from "./routes/restaurantRoutes.js";
 import LocationRouter from "./routes/locationRoutes.js";
-
-import tableRouter from './routes/tableRoute.js'
-import reserveRouter from "./routes/reservetableRoute.js"
-import categoryRoute from './routes/TableCategoryRoute.js'
-import webhookRouter from "./routes/stripeWebhook.js";
+import tableRouter from './routes/tableRoute.js';
+import reserveRouter from "./routes/reservetableRoute.js";
+import categoryRoute from './routes/TableCategoryRoute.js';
 import paymentRouter from "./routes/paymentRoute.js";
-import { releaseExpiredReservations } from "./utils/releaseTable.js";
 
 dotenv.config();
 connectDB();
 
 const app = express();
 
-// Stripe Webhook Route - RAW Body Parser (MUST BE FIRST)
-app.use("/api/v1/webhook/stripe", express.raw({ type: "application/json" }), webhookRouter);
+// app.use("/api/v1/webhook/stripe", webhookRouter); 
 
-// General Middleware
-app.use(express.json()); // JSON Body Parser (for normal APIs)
+app.use(express.json());
 app.use(cookieParser());
 
 // CORS Setup
 const allowedOrigins = process.env.CLIENT_URLS?.split(",") || [
   "http://localhost:5173",
+  "http://localhost:5174",
   "http://localhost:5175",
   "https://restaurant-dashboard-three.vercel.app",
   "https://restaurant-project-ivory.vercel.app"
 ];
 
+// ✅ Apply CORS before any routes
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -49,21 +49,17 @@ const corsOptions = {
     }
   },
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
 };
-
 app.use(cors(corsOptions));
 
-setInterval(() => {
-  releaseExpiredReservations();
-}, 30 * 1000);
 // Routes
 app.use("/api/v1", userRouter);
 app.use("/api/v1", InventoryRouter);
 app.use("/api/v1", StockRouter);
-app.use('/api/v1', tableRouter)
-app.use("/api/v1", reserveRouter)
-app.use("/api/v1", categoryRoute)
+app.use("/api/v1", tableRouter);
+app.use("/api/v1", reserveRouter);
+app.use("/api/v1", categoryRoute);
 app.use("/api/v1", categoryRouter);
 app.use("/api/v1", menuRouter);
 app.use("/api/v1", orderRouter);

@@ -1,5 +1,5 @@
 import stripe from "../config/stripe.js";
-import TableReserve from "../models/TableReserve.js";
+import ReserveTableSchema from "../models/TableReserve.js";
 import UserSchema from "../models/userModel.js";
 
 export const createStripePaymentIntent = async (req, res) => {
@@ -11,7 +11,7 @@ export const createStripePaymentIntent = async (req, res) => {
     }
 
     const user = await UserSchema.findById(userId);
-    const reservation = await TableReserve.findById(reservationId).populate("table");
+    const reservation = await ReserveTableSchema.findById(reservationId).populate("table");
 
     if (!user || !reservation) {
       return res.status(404).json({ success: false, msg: "User or reservation not found" });
