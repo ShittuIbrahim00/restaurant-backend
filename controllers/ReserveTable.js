@@ -53,7 +53,7 @@ export const createReserveTable = async (req, res) => {
     }
 
     // Update table to reserved
-    table.isReserved = true;
+    table.isReserved = false;
     await table.save();
 
     // Create reservation and save

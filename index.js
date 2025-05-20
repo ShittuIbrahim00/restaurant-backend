@@ -18,17 +18,21 @@ import reserveRouter from "./routes/reservetableRoute.js"
 import categoryRoute from './routes/TableCategoryRoute.js'
 import webhookRouter from "./routes/stripeWebhook.js";
 import paymentRouter from "./routes/paymentRoute.js";
+import { releaseExpiredReservations } from "./utils/releaseTable.js";
 
 dotenv.config();
 connectDB();
 
 const app = express();
 
-app.use("/api/v1/webhook/stripe", webhookRouter); 
+// Stripe Webhook Route - RAW Body Parser (MUST BE FIRST)
+app.use("/api/v1/webhook/stripe", express.raw({ type: "application/json" }), webhookRouter);
 
-app.use(express.json());
+// General Middleware
+app.use(express.json()); // JSON Body Parser (for normal APIs)
 app.use(cookieParser());
 
+// CORS Setup
 const allowedOrigins = process.env.CLIENT_URLS?.split(",") || [
   "http://localhost:5173",
   "http://localhost:5175",
@@ -50,6 +54,9 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
+setInterval(() => {
+  releaseExpiredReservations();
+}, 30 * 1000);
 // Routes
 app.use("/api/v1", userRouter);
 app.use("/api/v1", InventoryRouter);
@@ -66,5 +73,5 @@ app.use("/api/v1", paymentRouter);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`✅ Server is running on port ${PORT}`);
 });

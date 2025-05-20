@@ -1,26 +1,33 @@
-import cron from "node-cron";
+import TableReserve from "../models/TableReserve.js";
 import createTableSchema from "../models/CreateTable.js";
-// import CreateTable from "../models/CreateTable.js";
 
-// Run every 10 minutes (you can adjust the interval)
-cron.schedule("*/10 * * * *", async () => {
+export const releaseExpiredReservations = async () => {
+  const expirationMs = 1 * 60 * 1000; // 1 minute
+  const expirationDate = new Date(Date.now() - expirationMs);
+
   try {
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const expiredReservations = await TableReserve.find({
+      isReserved: true,
+      reservedAt: { $lte: expirationDate },
+    });
 
-    const released = await createTableSchema.updateMany(
-      {
-        isReserved: true,
-        reservedAt: { $lte: oneHourAgo },
-      },
-      {
-        $set: { isReserved: false, reservedAt: null },
+    for (const reservation of expiredReservations) {
+      reservation.isReserved = false;
+      reservation.isPaid = false; // optional, if you want to reset payment
+      reservation.reservedAt = null;
+      reservation.paymentReference = null;
+      await reservation.save();
+
+      const table = await createTableSchema.findById(reservation.table);
+      if (table) {
+        table.isReserved = false;
+        table.reservedAt = null;
+        await table.save();
       }
-    );
 
-    if (released.modifiedCount > 0) {
-      console.log(`${released.modifiedCount} tables released`);
+      console.log(`Released reservation ${reservation._id} and associated table.`);
     }
-  } catch (err) {
-    console.error("Error releasing tables:", err);
+  } catch (error) {
+    console.error("Error releasing expired reservations:", error);
   }
-});
+};
