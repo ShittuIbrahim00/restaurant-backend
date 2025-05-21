@@ -17,7 +17,7 @@ export const createCategory =async (req, res) => {
             admin_id,
             name,
             desc,
-            img,
+            img:img,
         })
 
         await category.save()
@@ -47,5 +47,20 @@ export const getCategory = async(req,res) => {
             status:500,
             msg:"An error Occured"
         });
+    }
+}
+
+export const deleteCategory = async(req,res)=>{
+    try {
+        const {id} = req.params;
+        const category = await Category .findByIdAndDelete(id);
+
+        if(!category){
+            return res.status(404).json({message:"Category not found"});
+        }
+
+        res.status(200).json({message:"Category deleted successfully"});
+    } catch (err) {
+        res.status(500).json({message:error.message});
     }
 }

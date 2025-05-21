@@ -1,5 +1,6 @@
 import Order from "../models/orderModel.js";
 import Menu from "../models/menuModel.js";
+import User from "../models/userModel.js"
 
 //Place an Order
 
@@ -87,5 +88,18 @@ export const updateOrderStatus = async (req, res) => {
     } catch (error) {
         console.error("Admin failed to update order", error);
         res.status(500).json({message: "Internal server error"})
+    }
+}
+
+export const getAllOrders = async(req, res)=>{
+    try {
+        const orders = await Order.find()
+        .populate("customer_id", "name email") 
+        .populate("menuItems.menu_id", "name");
+  
+        res.status(200).json({success:true, message:"All Orders", orders})
+    } catch (err) {
+        console.error("Error fetching orders", err);
+        res.status(500).json({message:"Internal server error"});
     }
 }
