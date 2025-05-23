@@ -13,12 +13,12 @@ export const createCategory =async (req, res) => {
 
         }
 
-        const category = new Category({
-            admin_id,
-            name,
-            desc,
-            img:img,
-        })
+    const category = new Category({
+      admin_id,
+      name,
+      desc,
+      img:img,
+    });
 
         await category.save()
 
@@ -30,6 +30,7 @@ export const createCategory =async (req, res) => {
 
     } catch (error) {
        res.status(500).json({success:false, message:error.message}) 
+   
     }
 };
 
@@ -64,3 +65,6 @@ export const deleteCategory = async(req,res)=>{
         res.status(500).json({message:error.message});
     }
 }
+
+
+

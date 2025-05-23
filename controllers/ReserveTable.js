@@ -1,0 +1,288 @@
+import Table from "../models/CreateTable.js";
+// import TableReserve from "../models/TableReserve.js";
+import createTableSchema from "../models/CreateTable.js";
+import ReserveTableSchema from "../models/TableReserve.js";
+import UserSchema from "../models/userModel.js";
+
+export const createReserveTable = async (req, res) => {
+  try {
+    const { reservation_Date, reservation_Time, qty_persons, userId } =
+      req.body;
+
+    if (!userId) {
+      return res
+        .status(400)
+        .json({ success: false, msg: "User ID is required" });
+    }
+
+    const findUser = await UserSchema.findById(userId);
+    if (!findUser) {
+      return res.status(404).json({ success: false, msg: "User not found" });
+    }
+
+    const tableId = req.params._id;
+    if (!tableId) {
+      return res
+        .status(400)
+        .json({ success: false, msg: "Table ID is required" });
+    }
+
+    const table = await createTableSchema.findById(tableId);
+    if (!table) {
+      return res.status(404).json({ success: false, msg: "Table not found" });
+    }
+
+    const quantity = parseInt(qty_persons, 10);
+    if (isNaN(quantity) || quantity <= 0) {
+      return res
+        .status(400)
+        .json({ success: false, msg: "Invalid number of persons" });
+    }
+
+    if (quantity > table.capacity) {
+      return res.status(400).json({
+        success: false,
+        msg: `This table can only accommodate ${table.capacity} people`,
+      });
+    }
+
+    // ✅ Check only for paid (confirmed) reservations at same date/time
+    const conflictingReservation = await ReserveTableSchema.findOne({
+      table: table._id,
+      reservation_Date,
+      reservation_Time,
+      isReserved: true, // Only consider confirmed (paid) reservations
+    });
+
+    if (conflictingReservation) {
+      return res.status(409).json({
+        success: false,
+        msg: "This table is already reserved for the selected date and time",
+      });
+    }
+
+    // ✅ Create the reservation (NOT reserved or paid yet)
+    const tx_ref = `tx-${Date.now()}`;
+
+    const reservation = new ReserveTableSchema({
+      table: table._id,
+      user: userId,
+      reservation_Date,
+      reservation_Time,
+      qty_persons: quantity,
+      tx_ref,
+      isReserved: false,
+      isPaid: false,
+      reservedAt: new Date(), // for cron cleanup
+    });
+
+    const savedReservation = await reservation.save();
+
+    res.status(201).json({
+      success: true,
+      msg: "Reservation created. Awaiting payment...",
+      data: savedReservation,
+      tx_ref,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      msg: "An error occurred while creating the reservation",
+    });
+  }
+};
+
+export const cancelReserveTable = async (req, res) => {
+  try {
+    const { reservationId } = req.params;
+
+    // Find the reservation
+    const reservation = await ReserveTableSchema.findById(reservationId);
+    if (!reservation) {
+      return res
+        .status(404)
+        .json({ success: false, msg: "Reservation not found" });
+    }
+
+    // Find the table
+    const table = await createTableSchema.findById(reservation.table);
+    if (!table) {
+      return res.status(404).json({ success: false, msg: "Table not found" });
+    }
+
+    // Set table as not reserved
+    table.isReserved = false;
+    await table.save();
+
+    // Delete the reservation
+    await ReserveTableSchema.findByIdAndDelete(reservationId);
+
+    res
+      .status(200)
+      .json({ success: true, msg: "Reservation canceled successfully" });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ msg: "An error occurred while canceling the reservation" });
+  }
+};
+
+export const getSingleReserveTable = async (req, res) => {
+  try {
+    const { reservationId } = req.params;
+
+    if (!reservationId) {
+      return res
+        .status(404)
+        .json({ success: false, msg: "Reservation id required" });
+    }
+    const findReserveTableByID = await ReserveTableSchema.findById(
+      reservationId
+    )
+      .populate("user", { __v: 0, password: 0 })
+      .populate("table", { __v: 0 });
+    if (!findReserveTableByID) {
+      return res
+        .status(404)
+        .json({ success: false, msg: "Reserve table not found" });
+    }
+    res.status(200).json({
+      success: true,
+      msg: "Reserve Table Retrieve Successfully",
+      data: findReserveTableByID,
+    });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ msg: "An error occurred while fetching the reservation table" });
+  }
+};
+
+export const updateReserveTable = async (req, res) => {
+  try {
+    const { reservationId } = req.params; // Fix: use reservationId, not userId
+
+    const reservation = await ReserveTableSchema.findById(reservationId);
+    if (!reservation) {
+      return res.status(404).json({
+        success: false,
+        msg: "Reservation not found",
+      });
+    }
+
+    const updated = await ReserveTableSchema.findByIdAndUpdate(
+      reservationId,
+      req.body,
+      { new: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      msg: "Table Reservation Successfully Updated",
+      data: updated,
+    });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({
+      msg: "An Error Occurred While Updating Reservation Table",
+    });
+  }
+};
+
+export const getAllReserveTable = async (req, res) => {
+  try {
+    const resp = await ReserveTableSchema.find()
+      .populate("table")
+      .populate("user", { password: 0, __v: 0 });
+
+    res.status(200).json({
+      success: true,
+      msg: "Successfully Retrieved All Reserve Tables",
+      data: resp,
+    });
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({
+      msg: "An Error Occurred While Retrieving Reserve Tables",
+    });
+  }
+};
+
+export const deleteReserveTable = async (req, res) => {
+  try {
+    const id = req.params.id; // Assuming your route is defined as '/path/:id'
+    const find = await ReserveTableSchema.findById(id);
+    if (!find) {
+      return res.status(404).json({
+        success: false,
+        msg: "Table id not found or table does not exist",
+      });
+    }
+
+    const deletedTable = await ReserveTableSchema.findByIdAndDelete(id);
+    res.status(200).json({
+      success: true,
+      msg: "Successfully deleted reserve table",
+      data: deletedTable,
+    });
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({
+      msg: "An Error Occurred While Deleting Reserve Table",
+    });
+  }
+};
+
+export const getAllTablesWithReservationInfo = async (req, res) => {
+  try {
+    // Step 1: Get all tables
+    const tables = await Table.find().lean();
+
+    // Step 2: Get active reservations (you can filter by date if needed)
+    const reservations = await ReserveTableSchema.find({
+      isReserved: true,
+    })
+      .populate("user", "name email")
+      .populate("table", "_id")
+      .lean();
+
+    // Step 3: Build a map of tableId to reservation info
+    const reservationMap = {};
+    reservations.forEach((res) => {
+      const expiresAt = new Date(
+        new Date(res.reservation_Date).getTime() + 60 * 60 * 1000
+      ); // 1 hour later
+      reservationMap[res.table._id.toString()] = {
+        reservedBy: res.user,
+        reservation_Time: res.reservation_Time,
+        reservation_Date: res.reservation_Date,
+        expiresAt,
+      };
+    });
+
+    // Step 4: Attach reservation info to each table
+    const enrichedTables = tables.map((table) => {
+      const reservationInfo = reservationMap[table._id.toString()];
+      return {
+        ...table,
+        isBooked: table.isReserved,
+        reservationInfo: reservationInfo || null,
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      msg: "Fetched tables with reservation info",
+      data: enrichedTables,
+    });
+  } catch (error) {
+    console.error("Error fetching tables:", error.message);
+    res.status(500).json({
+      success: false,
+      msg: "Failed to fetch tables with reservation info",
+    });
+  }
+};
