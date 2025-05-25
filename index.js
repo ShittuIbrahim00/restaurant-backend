@@ -19,18 +19,13 @@ import tableRouter from './routes/tableRoute.js';
 import reserveRouter from "./routes/reservetableRoute.js";
 import categoryRoute from './routes/TableCategoryRoute.js';
 import paymentRouter from "./routes/paymentRoute.js";
+import flutterwaveRouter from "./flutter/flutterwaveRoute.js";
 
 dotenv.config();
 connectDB();
 
 const app = express();
 
-// app.use("/api/v1/webhook/stripe", webhookRouter); 
-
-app.use(express.json());
-app.use(cookieParser());
-
-// CORS Setup
 const allowedOrigins = process.env.CLIENT_URLS?.split(",") || [
   "http://localhost:5173",
   "http://localhost:5174",
@@ -53,7 +48,15 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-// Routes
+// ✅ Middleware
+app.use(cookieParser());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// ✅ Flutterwave routes
+app.use("/api/v1/flutterwave", flutterwaveRouter);
+
+// ✅ All other JSON routes
 app.use("/api/v1", userRouter);
 app.use("/api/v1", InventoryRouter);
 app.use("/api/v1", StockRouter);

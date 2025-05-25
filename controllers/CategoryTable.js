@@ -3,9 +3,15 @@ import createTableSchema from "../models/CreateTable.js";
 
 export const createTableCategory = async (req, res) => {
   try {
+    const { name } = req.body;
     const createCategory = {
-      name: req.body.name,
+      name
     };
+    const existingCategory = await TableCat.findOne({name})
+
+    if(existingCategory) {
+      return res.status(400).json({sucess: false, msg: 'This category name already existed'})
+    }
     const resp = new TableCat(createCategory);
     const create = await resp.save();
     res.status(200).json({

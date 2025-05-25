@@ -1,9 +1,9 @@
+
 import axios from "axios";
 import createTableSchema from "../models/CreateTable.js";
 import ReserveTableSchema from "../models/TableReserve.js";
 import UserSchema from "../models/userModel.js";
 import sendEmail from "../utils/sendEmail.js";
-import cron from "node-cron"; // ⏱ cron for scheduled tasks
 
 export const flutterwaveWebhook = async (req, res) => {
   const signature = req.headers["verif-hash"];
@@ -32,8 +32,12 @@ export const flutterwaveWebhook = async (req, res) => {
       return res.status(400).send("Missing tx_ref or transaction_id");
     }
 
+    // 🔁 Check if this tx_ref or transaction ID has already been processed
     const alreadyProcessed = await ReserveTableSchema.findOne({
-      $or: [{ tx_ref }, { paymentReference: transaction_id }]
+      $or: [
+        { tx_ref },
+        { paymentReference: transaction_id }
+      ]
     });
 
     if (alreadyProcessed?.isPaid) {
@@ -111,7 +115,7 @@ export const flutterwaveWebhook = async (req, res) => {
         user: userId,
         tx_ref,
         paymentReference: transaction_id
-      });
+      });      
 
       const user = await UserSchema.findById(userId);
 
@@ -125,6 +129,41 @@ export const flutterwaveWebhook = async (req, res) => {
         );
       }
 
+      // ⏱ Auto release logic
+      setTimeout(async () => {
+        try {
+          const latest = await ReserveTableSchema.findById(reservation._id);
+          if (latest?.isReserved) {
+            latest.isReserved = false;
+            latest.isPaid = false;
+            latest.reservedAt = null;
+            latest.paymentReference = undefined;
+            await latest.save();
+
+            await createTableSchema.findByIdAndUpdate(tableId, {
+              isReserved: false,
+              reservedAt: null,
+              user: null,
+              tx_ref: null,
+              $unset: { paymentReference: "" }
+            });            
+
+            if (user?.email) {
+              await sendEmail(
+                user.email,
+                "Reservation Released",
+                `<p>Dear ${user.name},</p>
+                 <p>Your reservation for Table <strong>${table?.tableNumber}</strong> has been released due to inactivity after 10 minutes.</p>`
+              );
+            }
+
+            console.log("⏱️ Table released after 10 minutes");
+          }
+        } catch (releaseErr) {
+          console.error("❌ Error releasing table:", releaseErr.message);
+        }
+      }, 10 * 60 * 1000);
+
       return res.status(200).send("Payment processed securely");
     } catch (err) {
       console.error("❌ Error processing reservation:", err.message);
@@ -134,50 +173,3 @@ export const flutterwaveWebhook = async (req, res) => {
     return res.status(200).send("Ignored event");
   }
 };
-
-// ⏱ node-cron job to release unclaimed reservations after 10 minutes
-cron.schedule("* * * * *", async () => {
-  console.log("⏱ Cron job checking for expired reservations");
-
-  const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
-
-  try {
-    const expiredReservations = await ReserveTableSchema.find({
-      isReserved: true,
-      reservedAt: { $lte: tenMinutesAgo },
-    });
-
-    for (const reservation of expiredReservations) {
-      const tableId = reservation.tableId || reservation.table;
-      const user = await UserSchema.findById(reservation.user);
-
-      reservation.isReserved = false;
-      reservation.isPaid = false;
-      reservation.reservedAt = null;
-      reservation.paymentReference = undefined;
-      await reservation.save();
-
-      await createTableSchema.findByIdAndUpdate(tableId, {
-        isReserved: false,
-        reservedAt: null,
-        user: null,
-        tx_ref: null,
-        $unset: { paymentReference: "" },
-      });
-
-      if (user?.email) {
-        const table = await createTableSchema.findById(tableId);
-        await sendEmail(
-          user.email,
-          "Reservation Released",
-          `<p>Dear ${user.name},</p>
-           <p>Your reservation for Table <strong>${table?.tableNumber}</strong> has been released due to inactivity after 10 minutes.</p>`
-        );
-      }
-
-      console.log(`🚪 Reservation ${reservation._id} released`);
-    }
-  } catch (error) {
-    console.error("❌ Cron job error:", error.message);
-  }
-});

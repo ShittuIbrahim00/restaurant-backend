@@ -61,9 +61,8 @@ export const createReserveTable = async (req, res) => {
       });
     }
 
-    // Update table to reserved
-    table.isReserved = true;
-    await table.save();
+    // ✅ Create the reservation (NOT reserved or paid yet)
+    const tx_ref = `tx-${Date.now()}`;
 
     const reservation = new ReserveTableSchema({
       table: table._id,
