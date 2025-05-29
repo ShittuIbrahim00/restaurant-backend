@@ -1,5 +1,6 @@
 import createTableSchema from "../models/CreateTable.js";
 import TableCat from "../models/TableCategory.js";
+import ReserveTableSchema from "../models/TableReserve.js";
 import TableReserve from "../models/TableReserve.js";
 
 export const createTable = async (req, res) => {
@@ -46,33 +47,47 @@ export const createTable = async (req, res) => {
 export const updateTable = async (req, res) => {
   try {
     const id = req.params.id;
+
+    // Check if table exists in createTableSchema
     const tableId = await createTableSchema.findById(id);
-
-    if (!tableId)
-      res.status(404).json({
+    if (!tableId) {
+      return res.status(404).json({
         success: false,
-        msg: "Table id not found or an error ocurred",
+        msg: "Table not found",
       });
+    }
 
-    const update = await createTableSchema.findByIdAndUpdate(id, req.body, {
-      new: true,
+    // Update both schemas
+    const updatedMainTable = await createTableSchema.findByIdAndUpdate(
+      id,
+      req.body,
+      { new: true }
+    );
+
+    await ReserveTableSchema.findByIdAndUpdate(id, req.body, { new: true });
+
+    return res.status(200).json({
+      success: true,
+      msg: "Table updated successfully in both schemas",
+      data: updatedMainTable,
     });
 
-    res
-      .status(200)
-      .json({ success: true, msg: "Table updated sucessfully", data: update });
   } catch (error) {
-    console.log(error.message);
-    res.status(500).json({ msg: "An Error Ocured While Updating Table" });
+    console.error(error.message);
+    return res.status(500).json({
+      success: false,
+      msg: "An error occurred while updating the table",
+    });
   }
 };
+
 
 export const getAllTable = async (req, res) => {
   try {
     const resp = await createTableSchema
       .find()
       .populate("categoryId")
-      .populate("user", { password: 0, __v: 0 });
+      
 
     res.status(200).json({
       success: true,

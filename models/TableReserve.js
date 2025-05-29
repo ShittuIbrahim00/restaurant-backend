@@ -9,6 +9,7 @@ const ReserveTable = new mongoose.Schema({
   paymentReference: { type: String, unique: true, sparse: true }, // ✅ Store Flutterwave transaction ID
   qty_persons: { type: Number, required: true, min: 1 },
   isReserved: { type: Boolean, default: false },
+  amountPaid: { type: Number, default: 0 },
   isPaid: { type: Boolean, default: false },
   reservedAt: { type: Date, default: null },
   date_created: { type: Date, default: Date.now, required: true },

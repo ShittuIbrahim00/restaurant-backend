@@ -20,6 +20,12 @@ export const createReserveTable = async (req, res) => {
       return res.status(404).json({ success: false, msg: "User not found" });
     }
 
+    const date = new Date(Date.now());
+
+    if (reservation_Date < date) {
+      return res.status(409).json({ success: false, msg: 'Date cannot be in the past' });
+    }
+
     const tableId = req.params._id;
     if (!tableId) {
       return res

@@ -26,6 +26,11 @@ export const createStockMovement = async (req, res) => {
   }
 };
 
+export const getLowStockItems = async () => {
+  const items = await SupplySchema.find();
+  return items.filter(item => item.quantity <= item.reorderPoint);
+};
+
 // GET all stock movements
 export const getAllStockMovements = async (req, res) => {
   try {
