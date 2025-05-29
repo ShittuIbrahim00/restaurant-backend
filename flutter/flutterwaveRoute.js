@@ -1,6 +1,6 @@
 import express from 'express';
 import { flutterwaveWebhook } from './flutterwaveWebhook.js';
-import { initiateFlutterwavePayment, verifyFlutterwavePayment } from './flutterwaveController.js';
+import { initiateFlutterwavePayment, initiateOrderPayment, verifyFlutterwaveOrderPayment, verifyFlutterwavePayment } from './flutterwaveController.js';
 
 const flutterwaveRouter = express.Router();
 
@@ -18,7 +18,11 @@ flutterwaveRouter.options('/pay', (req, res) => {
 // Payment initiation route
 flutterwaveRouter.post('/pay', initiateFlutterwavePayment);
 
+flutterwaveRouter.post('/cart-checkout', initiateOrderPayment);
+
 flutterwaveRouter.post('/verify', verifyFlutterwavePayment);
+
+flutterwaveRouter.post('/verify-order', verifyFlutterwaveOrderPayment);
 
 // Webhook route (raw body for signature verification)
 flutterwaveRouter.post('/webhook', express.raw({ type: '*/*' }), flutterwaveWebhook);

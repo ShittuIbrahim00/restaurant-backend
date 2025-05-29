@@ -1,7 +1,7 @@
 import express from "express";
 const userRouter = express.Router();
 
-import { registerUser, loginUser, adminCreateUser, staffCreateUser, getUsers, getUserById, updateUser, deleteUser } from "../controllers/userController.js";
+import { registerUser, loginUser, adminCreateUser, staffCreateUser, getUsers, getUserById, updateUser, deleteUser, getAllUsers } from "../controllers/userController.js";
 
 import { authorizeRoles, protect } from "../middlewares/authMiddleware.js";
 
@@ -21,6 +21,8 @@ userRouter.get("/restaurant-users", protect, authorizeRoles("admin", "restaurant
 
 // (admin or self)
 userRouter.get("/restaurant-user", protect, getUserById);
+
+userRouter.get("/users", getAllUsers);
 
 // (admin or self)
 userRouter.put("/update-restaurant-user", protect, updateUser);

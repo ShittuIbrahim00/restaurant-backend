@@ -3,6 +3,7 @@ import createTableSchema from "../models/CreateTable.js";
 import ReserveTableSchema from "../models/TableReserve.js";
 import UserSchema from "../models/userModel.js";
 import sendEmail from "../utils/sendEmail.js";
+import orderModel from "../models/orderModel.js";
 
 export const flutterwaveWebhook = async (req, res) => {
   const signature = req.headers["verif-hash"];
@@ -14,7 +15,7 @@ export const flutterwaveWebhook = async (req, res) => {
 
   let payload;
   try {
-    payload = req.body;
+    payload = JSON.parse(req.body.toString("utf8"));
   } catch (error) {
     return res.status(400).send("Invalid payload format");
   }
@@ -24,24 +25,11 @@ export const flutterwaveWebhook = async (req, res) => {
     payload.data.status === "successful"
   ) {
     const tx_ref = payload.data.tx_ref;
-    const transaction_id = String(payload.data.id); // Flutterwave transaction ID
+    const transaction_id = String(payload.data.id);
 
     if (!tx_ref || !transaction_id) {
       console.error("Missing tx_ref or transaction_id");
       return res.status(400).send("Missing tx_ref or transaction_id");
-    }
-
-    // 🔁 Check if this tx_ref or transaction ID has already been processed
-    const alreadyProcessed = await ReserveTableSchema.findOne({
-      $or: [
-        { tx_ref },
-        { paymentReference: transaction_id }
-      ]
-    });
-
-    if (alreadyProcessed?.isPaid) {
-      console.log("Duplicate transaction. Already processed.");
-      return res.status(200).send("Duplicate transaction. Already processed.");
     }
 
     let verifiedData;
@@ -72,40 +60,42 @@ export const flutterwaveWebhook = async (req, res) => {
     }
 
     const { meta, amount } = verifiedData;
-    if (!meta || !meta.userId || !meta.tableId) {
-      return res.status(400).send("Missing metadata");
+
+    if (!meta?.purpose) {
+      return res.status(400).send("Missing metadata purpose");
     }
 
-    const { userId, tableId } = meta;
+    if (meta.purpose === "table") {
+      // === TABLE RESERVATION LOGIC ===
+      const { userId, tableId } = meta;
 
-    try {
-      const table = await createTableSchema.findById(tableId);
-      if (!table) {
-        return res.status(404).send("Table not found");
+      // Check if already processed
+      const alreadyProcessed = await ReserveTableSchema.findOne({
+        $or: [{ tx_ref }, { paymentReference: transaction_id }],
+      });
+
+      if (alreadyProcessed?.isPaid) {
+        return res
+          .status(200)
+          .send("Duplicate transaction. Already processed.");
       }
 
-      const expectedAmount = table.price;
-      if (Number(amount) !== Number(expectedAmount)) {
-        console.error(`Amount mismatch. Expected: ${expectedAmount}, Got: ${amount}`);
+      const table = await createTableSchema.findById(tableId);
+      if (!table) return res.status(404).send("Table not found");
+
+      if (Number(amount) !== Number(table.price)) {
+        console.error("Amount mismatch");
         return res.status(400).send("Incorrect payment amount");
       }
 
       const reservation = await ReserveTableSchema.findOne({ tx_ref });
+      if (!reservation) return res.status(404).send("Reservation not found");
 
-      if (!reservation) {
-        return res.status(404).send("Reservation not found");
-      }
-
-      if (reservation.isPaid) {
-        console.log("Reservation already marked as paid");
-        return res.status(200).send("Already processed");
-      }
-
-      // ✅ Mark reservation as paid and reserved
       reservation.isPaid = true;
       reservation.isReserved = true;
       reservation.reservedAt = new Date();
       reservation.paymentReference = transaction_id;
+      reservation.amountPaid = Number(amount);
       await reservation.save();
 
       await createTableSchema.findByIdAndUpdate(tableId, {
@@ -113,11 +103,10 @@ export const flutterwaveWebhook = async (req, res) => {
         reservedAt: new Date(),
         user: userId,
         tx_ref,
-        paymentReference: transaction_id
-      });      
+        paymentReference: transaction_id,
+      });
 
       const user = await UserSchema.findById(userId);
-
       if (user?.email) {
         await sendEmail(
           user.email,
@@ -128,47 +117,85 @@ export const flutterwaveWebhook = async (req, res) => {
         );
       }
 
-      // ⏱ Auto release logic
-      setTimeout(async () => {
-        try {
-          const latest = await ReserveTableSchema.findById(reservation._id);
-          if (latest?.isReserved) {
-            latest.isReserved = false;
-            latest.isPaid = false;
-            latest.reservedAt = null;
-            latest.paymentReference = undefined;
-            await latest.save();
+      return res.status(200).send("Table reservation payment processed");
+    } else if (meta.purpose === "order") {
+      // === FOOD ORDER PAYMENT LOGIC FOR MULTIPLE ORDERS ===
+      const { orderIds, userId } = meta;
 
-            await createTableSchema.findByIdAndUpdate(tableId, {
+      if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
+        return res.status(400).send("Missing or invalid orderIds in metadata");
+      }
+
+      // Find all orders
+      const orders = await orderModel.find({ _id: { $in: orderIds } });
+      if (orders.length !== orderIds.length) {
+        return res.status(404).send("One or more orders not found");
+      }
+
+      // Check for already paid order
+      if (orders.some((o) => o.paymentStatus === "Completed")) {
+        return res
+          .status(200)
+          .send("Duplicate transaction. Already processed.");
+      }
+
+      // Verify amount matches sum of order amounts
+      const totalOrderAmount = orders.reduce(
+        (sum, o) => sum + Number(o.totalAmount),
+        0
+      );
+      if (Number(amount) !== totalOrderAmount) {
+        console.error("Amount mismatch in order payment");
+        return res.status(400).send("Incorrect payment amount");
+      }
+
+      // Mark all orders as completed
+      await orderModel.updateMany(
+        { _id: { $in: orderIds }, paymentStatus: { $ne: "Completed" } },
+        { $set: { paymentStatus: "Completed" } }
+      );
+
+      // Update tables status to "Available" for Dine-in orders with assigned table
+      const dineInTables = orders
+        .filter((o) => o.orderType === "Dine-in" && o.tableNumber)
+        .map((o) => o.tableNumber);
+
+      if (dineInTables.length > 0) {
+        await createTableSchema.updateMany(
+          { tableNumber: { $in: dineInTables } },
+          {
+            $set: {
               isReserved: false,
               reservedAt: null,
               user: null,
               tx_ref: null,
-              $unset: { paymentReference: "" }
-            });            
-
-            if (user?.email) {
-              await sendEmail(
-                user.email,
-                "Reservation Released",
-                `<p>Dear ${user.name},</p>
-                 <p>Your reservation for Table <strong>${table?.tableNumber}</strong> has been released due to inactivity after 10 minutes.</p>`
-              );
-            }
-
-            console.log("⏱️ Table released after 10 minutes");
+              paymentReference: null,
+            },
           }
-        } catch (releaseErr) {
-          console.error("❌ Error releasing table:", releaseErr.message);
-        }
-      }, 10 * 60 * 1000);
+        );
+        console.log(
+          `🪑 Released tables for orders: ${dineInTables.join(", ")}`
+        );
+      }
 
-      return res.status(200).send("Payment processed securely");
-    } catch (err) {
-      console.error("❌ Error processing reservation:", err.message);
-      return res.status(500).send("Internal error");
+      // Clear user's cart
+      await UserSchema.findByIdAndUpdate(userId, { cart: [] });
+
+      const user = await UserSchema.findById(userId);
+      if (user?.email) {
+        await sendEmail(
+          user.email,
+          "Your Order(s) are Confirmed",
+          `<p>Dear ${user.name},</p>
+           <p>Your order(s) have been paid successfully. They are now being processed.</p>`
+        );
+      }
+
+      return res.status(200).send("Order payment processed");
     }
-  } else {
-    return res.status(200).send("Ignored event");
+
+    return res.status(400).send("Unknown payment purpose");
   }
+
+  return res.status(200).send("Ignored event");
 };

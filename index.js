@@ -3,8 +3,8 @@ import dotenv from "dotenv";
 import { connectDB } from "./config/db.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-
-import "./utils/releaseTable.js";
+import http from "http";
+import { Server } from "socket.io";
 
 // Routes
 import userRouter from "./routes/userRoutes.js";
@@ -18,8 +18,12 @@ import LocationRouter from "./routes/locationRoutes.js";
 import tableRouter from './routes/tableRoute.js';
 import reserveRouter from "./routes/reservetableRoute.js";
 import categoryRoute from './routes/TableCategoryRoute.js';
-import paymentRouter from "./routes/paymentRoute.js";
+import kitchenRouter from "./routes/kitchenRoutes.js";
 import flutterwaveRouter from "./flutter/flutterwaveRoute.js";
+import { releaseExpiredReservations } from "./utils/releaseExpiredReservation.js";
+import HistoryRouter from "./routes/historyroute.js";
+import kitchenTouter from "./controllers/orderController.js";
+import { initSocket } from "./utils/socket.js";
 
 dotenv.config();
 connectDB();
@@ -34,7 +38,7 @@ const allowedOrigins = process.env.CLIENT_URLS?.split(",") || [
   "https://restaurant-project-ivory.vercel.app"
 ];
 
-// ✅ Apply CORS before any routes
+// CORS config
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -48,15 +52,28 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-// ✅ Middleware
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ Flutterwave routes
+// Create HTTP server & Socket.io server
+const server = http.createServer(app);
+export const io = initSocket(server);
+
+// Create a namespace for kitchen staff
+export const kitchenNamespace = io.of('/kitchen');
+
+kitchenNamespace.on('connection', (socket) => {
+  console.log('Kitchen staff connected:', socket.id);
+  
+  socket.on('disconnect', () => {
+    console.log('Kitchen staff disconnected:', socket.id);
+  });
+});
+
+// Routes
 app.use("/api/v1/flutterwave", flutterwaveRouter);
 
-// ✅ All other JSON routes
 app.use("/api/v1", userRouter);
 app.use("/api/v1", InventoryRouter);
 app.use("/api/v1", StockRouter);
@@ -65,12 +82,16 @@ app.use("/api/v1", reserveRouter);
 app.use("/api/v1", categoryRoute);
 app.use("/api/v1", categoryRouter);
 app.use("/api/v1", menuRouter);
-app.use("/api/v1", orderRouter);
+app.use("/api/v1", orderRouter); // Make sure orderRouter can import kitchenNamespace to emit events
 app.use("/api/v1", restaurantRouter);
 app.use("/api/v1", LocationRouter);
-app.use("/api/v1", paymentRouter);
+app.use("/api/v1/history", HistoryRouter);
+app.use("/api/v1", kitchenRouter);
+app.use("/api/v1", kitchenTouter);
+
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`✅ Server is running on port ${PORT}`);
+  setInterval(releaseExpiredReservations, 60 * 1000); 
 });

@@ -113,6 +113,15 @@ export const getUsers = async (req, res) => {
   }
 };
 
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await UserSchema.find().select("-password");
+    res.status(200).json(users);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 export const getUserById = async (req, res) => {
     const {userId} = req.query;
   try {
